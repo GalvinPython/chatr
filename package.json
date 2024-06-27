@@ -1,0 +1,21 @@
+{
+  "name": "xpbot",
+  "module": "index.ts",
+  "type": "module",
+  "version": "0.0.1",
+  "devDependencies": {
+    "@eslint/js": "^9.5.0",
+    "@types/bun": "latest",
+    "@types/eslint__js": "^8.42.3",
+    "typescript-eslint": "^7.13.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "discord.js": "^14.15.3",
+    "express": "^4.19.2",
+    "mysql2": "^3.10.1"
+  }
+}
