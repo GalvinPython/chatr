@@ -69,7 +69,7 @@ const commands: Record<string, Command> = {
 			await interaction
 				.reply({
 					ephemeral: true,
-					content: `[Github repository](https://github.com/GalvinPython/discord-autopublish)`,
+					content: `[Github repository](https://github.com/GalvinPython/chatr)`,
 				})
 				.catch(console.error);
 		},
