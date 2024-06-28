@@ -3,13 +3,15 @@
   "type": "module",
   "version": "0.0.2",
   "scripts": {
-	"api": "bun --watch api/index.js",
-	"bot": "bun --watch bot/index.ts"
+    "api": "bun --watch api/index.ts",
+    "bot": "bun --watch bot/index.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.5.0",
     "@types/bun": "latest",
+    "@types/cors": "^2.8.17",
     "@types/eslint__js": "^8.42.3",
+    "@types/express": "^4.17.21",
     "typescript-eslint": "^7.14.1"
   },
   "peerDependencies": {

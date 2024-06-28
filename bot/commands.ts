@@ -194,7 +194,7 @@ const commands: Record<string, Command> = {
 // Convert commands to a Map
 const commandsMap = new Map<string, Command>();
 for (const key in commands) {
-	if (commands.hasOwnProperty(key)) {
+	if (Object.prototype.hasOwnProperty.call(commands, key)) {
 		const command = commands[key];
 		console.log('loading ' + key);
 		commandsMap.set(key, command);

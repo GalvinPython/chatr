@@ -1,4 +1,5 @@
 // https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=274878008384&scope=bot+applications.commands
+//TODO: Type this
 
 // Check if DISCORD_TOKEN has been provided as an environment variable, and is a valid regex pattern
 const discordToken: string | undefined = process.env?.DISCORD_TOKEN
@@ -24,8 +25,6 @@ const rest = new REST().setToken(discordToken)
 const getAppId: {id?: string | null} = await rest.get(Routes.currentApplication()) || { id: null }
 if (!getAppId?.id) throw 'No application ID was able to be found with this token'
 
-//TODO: Type this
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const data: any = await rest.put(
 	Routes.applicationCommands(getAppId.id),
 	{
