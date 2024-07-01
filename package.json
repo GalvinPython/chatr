@@ -7,7 +7,7 @@
     "bot": "bun --watch bot/index.ts"
   },
   "devDependencies": {
-    "@eslint/js": "^9.5.0",
+    "@eslint/js": "^9.6.0",
     "@types/bun": "latest",
     "@types/cors": "^2.8.17",
     "@types/eslint__js": "^8.42.3",
