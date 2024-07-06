@@ -1,7 +1,7 @@
 {
   "name": "xpbot",
   "type": "module",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "scripts": {
     "api": "bun --watch api/index.ts",
     "bot": "bun --watch bot/index.ts"
@@ -20,6 +20,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "discord.js": "^14.15.3",
+    "ejs": "^3.1.10",
     "express": "^4.19.2",
     "mysql2": "^3.10.1"
   }

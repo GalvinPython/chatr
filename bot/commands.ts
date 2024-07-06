@@ -134,8 +134,9 @@ const commands: Record<string, Command> = {
 				const user = interaction.user.id
 				const xp = await makeGETRequest(guild as string, user)
 				await interaction.reply({
-					ephemeral: false,
-					content: `<@${user}> you have ${xp.xp} XP! (Level ${convertToLevels(xp.xp)})`
+					embeds: [
+						quickEmbed({color: 'Blurple', title: 'XP', description: `<@${user}> you have ${xp.xp} XP! (Level ${convertToLevels(xp.xp)})`}, interaction)
+					]
 				})
 			}
 		}

@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap');
+
+body {
+	background-color: #222;
+	color: #fff;
+	font-family: 'Ubuntu', Arial, sans-serif;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	height: 100vh;
+}
+
+.box {
+	margin-top: 10px;
+	background-color: #333;
+	padding: 20px;
+	border-radius: 5px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+	margin-bottom: 20px;
+	min-width: 90vw;
+}
+
+.guildInfo {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 20px;
+}
+
+.guildInfo img {
+	margin-right: 10px;
+	max-width: 100px;
+	max-height: 100px;
+	border-radius: 50%;
+}
+
+/* Mobile Styles */
+@media only screen and (max-width: 600px) {
+	body {
+		padding: 10px;
+	}
+
+	.box {
+		min-width: 80vw;
+	}
+}
+
+.leaderboard {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	grid-gap: 20px;
+}
+
+.user {
+	background-color: #333;
+	padding: 20px;
+	border-radius: 5px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+	display: flex;
+	align-items: center;
+}
+
+.userPosition {
+	margin: 0;
+}
+
+.userImage {
+	margin-right: 10px;
+	margin-left: 10px;
+	max-width: 100px;
+	max-height: 100px;
+	border-radius: 50%;
+}
+
+.userInfo {
+	flex-grow: 1;
+}
+
+.userName {
+	margin: 0;
+}
+
+.userXP {
+	margin: 0;
+}

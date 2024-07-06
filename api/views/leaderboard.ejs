@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Leaderboard for <%= guild.guild_name %>
+	</title>
+	<link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+	<main>
+		<div class="box">
+			<div class="guildInfo">
+				<img id="guildIcon" src="<%= guild.guild_icon %>" alt="Guild Icon">
+				<h1 id="guildName">
+					<%= guild.guild_name %>
+				</h1>
+			</div>
+		</div>
+		<div class="leaderboard">
+			<% leaderboard.forEach((user, index) => { %>
+				<div class="user">
+					<p class="userPosition">#<%= index + 1 %></p>
+					<img class="userImage" src="<%= user.user_pfp %>" alt="User Image">
+					<div class="userInfo">
+						<h2 class="userName"><%= user.user_nickname %> (@<%= user.user_name %>)</h2>
+						<p class="userXP">XP: <%= user.xp %></p>
+					</div>
+				</div>
+			<% }) %>
+		</div>
+	</main>
+</body>
+
+</html>
