@@ -1,27 +1,27 @@
 {
-  "name": "xpbot",
-  "type": "module",
-  "version": "0.0.3",
-  "scripts": {
-    "api": "bun --watch api/index.ts",
-    "bot": "bun --watch bot/index.ts"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.5.0",
-    "@types/bun": "latest",
-    "@types/cors": "^2.8.17",
-    "@types/eslint__js": "^8.42.3",
-    "@types/express": "^4.17.21",
-    "typescript-eslint": "^7.14.1"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "discord.js": "^14.15.3",
-    "ejs": "^3.1.10",
-    "express": "^4.19.2",
-    "mysql2": "^3.10.1"
-  }
+	"name": "xpbot",
+	"type": "module",
+	"version": "0.0.4",
+	"scripts": {
+		"api": "bun --watch api/index.ts",
+		"bot": "bun --watch bot/index.ts"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.6.0",
+		"@types/bun": "latest",
+		"@types/cors": "^2.8.17",
+		"@types/eslint__js": "^8.42.3",
+		"@types/express": "^4.17.21",
+		"typescript-eslint": "^7.15.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"cors": "^2.8.5",
+		"discord.js": "^14.15.3",
+		"ejs": "^3.1.10",
+		"express": "^4.19.2",
+		"mysql2": "^3.10.2"
+	}
 }
