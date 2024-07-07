@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import mysql from 'mysql2';
-import ejs from 'ejs';
 import path from 'path';
 
 const app = express();
@@ -102,6 +101,9 @@ async function ensureGuildTableExists(guild, callback) {
 			user_pfp TINYTEXT,
 			user_name TINYTEXT,
 			user_nickname TINYTEXT,
+			user_level INT DEFAULT 0,
+			user_xp_needed_next_level INT,
+			user_progress_next_level DECIMAL(6, 2),
             PRIMARY KEY (user_id)
         )
     `;
@@ -166,23 +168,45 @@ app.post('/post/:guild/:user/:auth', (req, res) => {
 			return res.status(500).json({ message: 'Internal server error' });
 		}
 
-		const insertOrUpdateQuery = `
-			INSERT INTO \`${guild}\` (user_id, xp, user_pfp, user_name, user_nickname)
-			VALUES (?, ?, ?, ?, ?)
-			ON DUPLICATE KEY UPDATE
-			xp = xp + VALUES(xp),
-			user_pfp = VALUES(user_pfp),
-			user_name = VALUES(user_name),
-			user_nickname = VALUES(user_nickname)
-		`;
-		pool.query(insertOrUpdateQuery, [user, xpValue, pfp, name, nickname], (err, results) => {
+		const getXpQuery = `SELECT xp FROM \`${guild}\` WHERE user_id = ?`;
+
+		pool.query(getXpQuery, [user], (err, results) => {
 			if (err) {
-				console.error('Error updating XP:', err);
-				res.status(500).json({ message: 'Internal server error' });
+				console.error('Error fetching XP:', err);
+				return res.status(500).json({ message: 'Internal server error' });
 			}
-			else {
-				res.status(200).json(results);
-			}
+
+			const currentXp = results.length ? results[0].xp : 0;
+			const newXp = currentXp + xpValue;
+
+			const currentLevel = Math.floor(Math.sqrt(newXp / 100));
+			const nextLevel = currentLevel + 1;
+			const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+			const xpNeededForNextLevel = nextLevelXp - newXp;
+			const currentLevelXp = Math.pow(currentLevel, 2) * 100;
+			const progressToNextLevel = ((newXp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+
+			const updateQuery = `
+                INSERT INTO \`${guild}\` (user_id, xp, user_pfp, user_name, user_nickname, user_level, user_xp_needed_next_level, user_progress_next_level)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    xp = VALUES(xp),
+                    user_pfp = VALUES(user_pfp),
+                    user_name = VALUES(user_name),
+                    user_nickname = VALUES(user_nickname),
+                    user_level = VALUES(user_level),
+                    user_xp_needed_next_level = VALUES(user_xp_needed_next_level),
+                    user_progress_next_level = VALUES(user_progress_next_level)
+            `;
+
+			pool.query(updateQuery, [user, newXp, pfp, name, nickname, currentLevel, xpNeededForNextLevel, progressToNextLevel.toFixed(2)], (err, results) => {
+				if (err) {
+					console.error('Error updating XP:', err);
+					return res.status(500).json({ message: 'Internal server error' });
+				} else {
+					res.status(200).json(results);
+				}
+			});
 		});
 	});
 });
@@ -276,7 +300,7 @@ app.get('/leaderboard/:guild', async (req, res) => {
 		return res.status(404).json({ message: 'No guild was found with this ID' });
 	}
 	const data = await response.json();
-	res.render('leaderboard', { guild: data.guild, leaderboard: data.leaderboard});
+	res.render('leaderboard', { guild: data.guild, leaderboard: data.leaderboard });
 });
 
 app.listen(PORT, () => {

@@ -6,6 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Leaderboard for <%= guild.guild_name %>
 	</title>
+	<meta name="description" content="Leaderboard for <%= guild.guild_name %>">
 	<link rel="stylesheet" href="/styles.css">
 </head>
 
@@ -20,16 +21,22 @@
 			</div>
 		</div>
 		<div class="leaderboard">
-			<% leaderboard.forEach((user, index) => { %>
+			<% leaderboard.forEach((user, index)=> { %>
 				<div class="user">
-					<p class="userPosition">#<%= index + 1 %></p>
-					<img class="userImage" src="<%= user.user_pfp %>" alt="User Image">
+					<h1 class="userPosition">#<%= index + 1 %>
+					</h1>
+					<img class="userImage" src="<%= user.user_pfp %>" alt="User image for <%= user.user_name %>">
 					<div class="userInfo">
-						<h2 class="userName"><%= user.user_nickname %> (@<%= user.user_name %>)</h2>
-						<p class="userXP">XP: <%= user.xp %></p>
+						<h2 class="userName">
+							<%= user.user_nickname %> (@<%= user.user_name %>)
+						</h2>
+						<p class="userXP">XP: <%= user.xp %>
+						</p>
+						<p class="userXP">Level <%= user.user_level %> | <%= user.xp %>/<%= user.xp + user.user_xp_needed_next_level %> points to next level (<%= user.user_progress_next_level %>%)
+						</p>
 					</div>
 				</div>
-			<% }) %>
+				<% }) %>
 		</div>
 	</main>
 </body>

@@ -133,11 +133,38 @@ const commands: Record<string, Command> = {
 				const guild = interaction.guild?.id
 				const user = interaction.user.id
 				const xp = await makeGETRequest(guild as string, user)
+				const progress = xp.user_progress_next_level;
+				const progressBar = createProgressBar(progress);
+
 				await interaction.reply({
 					embeds: [
-						quickEmbed({color: 'Blurple', title: 'XP', description: `<@${user}> you have ${xp.xp} XP! (Level ${convertToLevels(xp.xp)})`}, interaction)
-					]
-				})
+						quickEmbed(
+							{
+								color: 'Blurple',
+								title: 'XP',
+								description: `<@${user}> you have ${xp.xp} XP! (Level ${convertToLevels(xp.xp)})`,
+							},
+							interaction
+						).addFields([
+							{
+								name: 'Progress To Next Level',
+								value: `${progressBar} ${progress}%`,
+								inline: true,
+							},
+							{
+								name: 'XP Required',
+								value: `${xp.user_xp_needed_next_level} XP`,
+								inline: true,
+							},
+						]),
+					],
+				});
+
+				function createProgressBar(progress: number): string {
+					const filled = Math.floor(progress / 10);
+					const empty = 10 - filled;
+					return '▰'.repeat(filled) + '▱'.repeat(empty);
+				}
 			}
 		}
 	},
@@ -169,7 +196,7 @@ const commands: Record<string, Command> = {
 					}, interaction);
 
 					// Add a field for each user with a mention
-					leaderboard.forEach((entry: { user_id: any; xp: any; }, index: number) => {
+					leaderboard.leaderboard.forEach((entry: { user_id: any; xp: any; }, index: number) => {
 						leaderboardEmbed.addFields([
 							{
 								name: `${index + 1}.`,
