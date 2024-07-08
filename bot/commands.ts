@@ -1,7 +1,7 @@
 // Commands taken from https://github.com/NiaAxern/discord-youtube-subscriber-count/blob/main/src/commands/utilities.ts
 
 import client from '.';
-import { type CommandInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
 import { getGuildLeaderboard, makeGETRequest } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
@@ -206,8 +206,16 @@ const commands: Record<string, Command> = {
 						]);
 					});
 
+					const button = new ButtonBuilder()
+						.setLabel('Leaderboard')
+						.setURL(`https://chatr.imgalvin.me/guild/${interaction.guildId}`)
+						.setStyle(ButtonStyle.Link);
+
+					const row = new ActionRowBuilder<ButtonBuilder>()
+						.addComponents(button);
+
 					// Send the embed
-					await interaction.reply({ embeds: [leaderboardEmbed] });
+					await interaction.reply({ embeds: [leaderboardEmbed], components: [row] });
 				} catch (error) {
 					console.error('Error executing command:', error);
 					await interaction.reply('There was an error retrieving the leaderboard.');
@@ -216,7 +224,41 @@ const commands: Record<string, Command> = {
 				await interaction.reply('This command can only be used in a guild.');
 			}
 		}
-	}
+	},
+	cansee: {
+		data: {
+			options: [],
+			name: 'cansee',
+			description: 'Check what channels the bot can see',
+			integration_types: [0],
+			contexts: [0, 2],
+		},
+		execute: async (interaction) => {
+			if (!interaction.memberPermissions?.has('ManageChannels')) {
+				const errorEmbed = quickEmbed({
+					color: 'Red',
+					title: 'Error!',
+					description: 'Missing permissions: `Manage Channels`'
+				}, interaction);
+				await interaction.reply({
+					ephemeral: true,
+					embeds: [errorEmbed]
+				})
+					.catch(console.error);
+				return;
+			}
+
+			const channels = await interaction.guild?.channels.fetch();
+			const accessibleChannels = channels?.filter(channel => channel && channel.permissionsFor(interaction.client.user)?.has('ViewChannel') && channel.type !== ChannelType.GuildCategory);
+
+			await interaction
+				.reply({
+					ephemeral: true,
+					content: accessibleChannels?.map(channel => `<#${channel?.id}>`).join('\n')
+				})
+				.catch(console.error);
+		},
+	},
 };
 
 // Convert commands to a Map

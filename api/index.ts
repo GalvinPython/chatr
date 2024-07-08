@@ -277,19 +277,37 @@ app.get('/get/:guild', async (req, res) => {
 
 app.post('/admin/:action/:guild/:target', (req, res) => {
 	const { guild, action, target } = req.params;
-	if (action === 'include') {
-		// run function to include target to guild
-		return;
+	const { auth } = req.body;
+
+	if (auth !== process.env.AUTH) {
+		return res.status(403).json({ message: 'Access denied. Auth token is missing' });
 	}
-	else if (action === 'exclude') {
-		// run function to exclude target from guild
-		return;
-	}
-	else if (action === 'updates') {
-		return;
-	}
-	else {
-		return res.status(400).json({ message: 'Illegal request' });
+
+	switch (action) {
+		case 'include':
+			// target: channel id
+			// run function to include target to guild
+			break;
+		case 'exclude':
+			// target: channel id
+			// run function to exclude target from guild
+			break;
+		case 'updates':
+			if (target !== 'enable') {
+				return res.status(400).json({ message: 'Illegal request' });
+			}
+			// targets: get (it will toggle it on the database)
+			// run function to disable/enable updates for guild
+			break;
+		case 'roles':
+			if (target !== 'add' && target !== 'remove') {
+				return res.status(400).json({ message: 'Illegal request' });
+			}
+			// targets: add, remove
+			// run function to add/remove level roles for guild
+			break;
+		default:
+			return res.status(400).json({ message: 'Illegal request' });
 	}
 });
 
@@ -301,6 +319,56 @@ app.get('/leaderboard/:guild', async (req, res) => {
 	}
 	const data = await response.json();
 	res.render('leaderboard', { guild: data.guild, leaderboard: data.leaderboard });
+});
+
+async function getBotInfo() {
+	const selectGuildsCountQuery = `
+		SELECT COUNT(*) AS total_guilds FROM info_guilds;
+	`;
+
+	const selectTotalMembersQuery = `
+		SELECT SUM(guild_members) AS total_members FROM info_guilds;
+	`;
+
+	try {
+		const guildsCountResult = await new Promise((resolve, reject) => {
+			pool.query(selectGuildsCountQuery, (err, results) => {
+				if (err) {
+					console.error('Error fetching guilds count:', err);
+					reject(err);
+				} else {
+					resolve(results[0].total_guilds);
+				}
+			});
+		});
+
+		const totalMembersResult = await new Promise((resolve, reject) => {
+			pool.query(selectTotalMembersQuery, (err, results) => {
+				if (err) {
+					console.error('Error fetching total members:', err);
+					reject(err);
+				} else {
+					resolve(results[0].total_members);
+				}
+			});
+		});
+
+		const botInfo = {
+			total_guilds: guildsCountResult,
+			total_members: totalMembersResult,
+		};
+
+		return botInfo
+	} catch (error) {
+		console.error('Error fetching bot info:', error);
+		return null
+	}
+}
+
+app.get('/', async (req, res) => {
+	const botInfo = await getBotInfo();
+	console.log(botInfo)
+	res.render('index', { botInfo: botInfo });
 });
 
 app.listen(PORT, () => {
