@@ -15,35 +15,27 @@ export async function makePOSTRequest(guild: string, user: string, xp: number, p
 }
 
 export async function makeGETRequest(guild: string, user: string) {
-	try {
-		const response = await fetch(`http://localhost:18103/get/${guild}/${user}`);
+	const response = await fetch(`http://localhost:18103/get/${guild}/${user}`);
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! Status: ${response.status}`);
-		}
-
-		const data = await response.json();
-		return data;
-	} catch (error) {
-		console.error('Error making GET request:', error);
-		throw error;
+	if (!response.ok) {
+		console.error(`HTTP error! Status: ${response.status}`);
+		return null;
 	}
+
+	const data = await response.json();
+	return data;
 }
 
 export async function getGuildLeaderboard(guild: string) {
-	try {
-		const response = await fetch(`http://localhost:18103/get/${guild}`)
+	const response = await fetch(`http://localhost:18103/get/${guild}`)
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! Status: ${response.status}`);
-		}
-
-		const data = await response.json();
-		return data;
-	} catch (error) {
-		console.error('Error making request for guild leaderboard: ', error);
-		throw error;
+	if (!response.ok) {
+		console.error(`HTTP error! Status: ${response.status}`);
+		return null;
 	}
+
+	const data = await response.json();
+	return data;
 }
 
 export async function updateGuildInfo(guild: string, name: string, icon: string, members: number) {

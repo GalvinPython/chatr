@@ -1,10 +1,10 @@
 {
 	"name": "xpbot",
 	"type": "module",
-	"version": "0.0.7",
+	"version": "0.0.7.1",
 	"scripts": {
-		"api": "bun --watch api/index.ts",
-		"bot": "bun --watch bot/index.ts"
+		"api": "bun api/index.ts",
+		"bot": "bun bot/index.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.6.0",
