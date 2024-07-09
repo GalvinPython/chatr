@@ -133,6 +133,15 @@ const commands: Record<string, Command> = {
 				const guild = interaction.guild?.id
 				const user = interaction.user.id
 				const xp = await makeGETRequest(guild as string, user)
+
+				if (!xp) {
+					await interaction.reply({
+						ephemeral: true,
+						content: "No XP data available."
+					});
+					return;
+				}
+
 				const progress = xp.user_progress_next_level;
 				const progressBar = createProgressBar(progress);
 
