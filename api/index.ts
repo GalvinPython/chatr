@@ -14,11 +14,11 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Create a MySQL connection pool
 const pool = mysql.createPool({
-	host: process.env.MYSQL_ADDRESS,
-	port: process.env.MYSQL_PORT,
-	user: process.env.MYSQL_USER,
-	password: process.env.MYSQL_PASSWORD,
-	database: process.env.MYSQL_DATABASE,
+	host: process.env.MYSQL_ADDRESS as string,
+	port: parseInt(process.env.MYSQL_PORT as string),
+	user: process.env.MYSQL_USER as string,
+	password: process.env.MYSQL_PASSWORD as string,
+	database: process.env.MYSQL_DATABASE as string,
 });
 
 // Create the basic information tables
@@ -82,9 +82,9 @@ async function initInfoTables() {
 
 	pool.query(createGuildsTable, (err, results) => {
 		if (err) {
-			console.error('Error creating excludes table:', err);
+			console.error('Error creating guilds info table:', err);
 		} else {
-			console.log('Excludes table created:', results);
+			console.log('Guilds info table created:', results);
 		}
 	});
 }
@@ -168,7 +168,7 @@ app.post('/post/:guild/:user/:auth', (req, res) => {
 			return res.status(500).json({ message: 'Internal server error' });
 		}
 
-		const getXpQuery = `SELECT xp FROM \`${guild}\` WHERE user_id = ?`;
+		const getXpQuery = `SELECT xp, user_level FROM \`${guild}\` WHERE user_id = ?`;
 
 		pool.query(getXpQuery, [user], (err, results) => {
 			if (err) {
@@ -177,6 +177,7 @@ app.post('/post/:guild/:user/:auth', (req, res) => {
 			}
 
 			const currentXp = results.length ? results[0].xp : 0;
+			const currentLevelSaved = results.length ? results[0].user_level : 0;
 			const newXp = currentXp + xpValue;
 
 			const currentLevel = Math.floor(Math.sqrt(newXp / 100));
@@ -202,9 +203,9 @@ app.post('/post/:guild/:user/:auth', (req, res) => {
 			pool.query(updateQuery, [user, newXp, pfp, name, nickname, currentLevel, xpNeededForNextLevel, progressToNextLevel.toFixed(2)], (err, results) => {
 				if (err) {
 					console.error('Error updating XP:', err);
-					return res.status(500).json({ message: 'Internal server error' });
+					return res.status(500).json({ success: false, message: 'Internal server error' });
 				} else {
-					res.status(200).json(results);
+					res.status(200).json({ success: true, sendUpdateEvent: currentLevelSaved !== currentLevel, level: currentLevel});
 				}
 			});
 		});
@@ -275,13 +276,15 @@ app.get('/get/:guild', async (req, res) => {
 	}
 });
 
-app.post('/admin/:action/:guild/:target', (req, res) => {
+app.post('/admin/:action/:guild/:target', async (req, res) => {
 	const { guild, action, target } = req.params;
-	const { auth } = req.body;
+	const { auth, extraData } = req.body;
 
 	if (auth !== process.env.AUTH) {
 		return res.status(403).json({ message: 'Access denied. Auth token is missing' });
 	}
+
+	let apiSuccess;
 
 	switch (action) {
 		case 'include':
@@ -293,19 +296,70 @@ app.post('/admin/:action/:guild/:target', (req, res) => {
 			// run function to exclude target from guild
 			break;
 		case 'updates':
-			if (target !== 'enable') {
+			if (target !== 'enable' && target !== 'disable' && target !== 'get') {
 				return res.status(400).json({ message: 'Illegal request' });
 			}
-			// targets: get (it will toggle it on the database)
-			// run function to disable/enable updates for guild
-			break;
+
+			switch (target) {
+				case 'enable':
+					if (!extraData || !extraData.channelId) {
+						return res.status(400).json({ message: 'Illegal request' });
+					}
+					try {
+						const data = await adminUpdatesAdd(guild, extraData.channelId);
+						return res.status(200).json(data);
+					} catch (error) {
+						return res.status(500).json({ message: 'Internal server error' });
+					}
+				case 'disable':
+					try {
+						const data = await adminUpdatesRemove(guild);
+						return res.status(200).json(data);
+					} catch (error) {
+						return res.status(500).json({ message: 'Internal server error' });
+					}
+				default:
+					try {
+						const data = await adminUpdatesGet(guild);
+						return res.status(200).json(data);
+					} catch (error) {
+						return res.status(500).json({ message: 'Internal server error' });
+					}
+			}
 		case 'roles':
-			if (target !== 'add' && target !== 'remove') {
+			if (target !== 'add' && target !== 'remove' && target !== 'get') {
 				return res.status(400).json({ message: 'Illegal request' });
 			}
-			// targets: add, remove
-			// run function to add/remove level roles for guild
-			break;
+
+			if ((target === 'add' || target === 'remove') && !extraData) {
+				return res.status(400).json({ message: 'Illegal request' });
+			}
+
+			switch (target) {
+				case 'get':
+					try {
+						const data = await adminRolesGet(guild);
+						return res.status(200).json(data);
+					} catch (error) {
+						return res.status(500).json({ message: 'Internal server error' });
+					}
+				case 'remove':
+					try {
+						const data = await adminRolesRemove(guild, extraData.role);
+						return res.status(200).json(data);
+					} catch (error) {
+						return res.status(500).json({ message: 'Internal server error' });
+					}
+				case 'add':
+					try {
+						const data = await adminRolesAdd(guild, extraData.role, extraData.level);
+						return res.status(200).json(data);
+					} catch (error) {
+						return res.status(500).json({ message: 'Internal server error' });
+					}
+				default:
+					return res.status(500).json({ message: 'Internal server error' });
+			}
 		default:
 			return res.status(400).json({ message: 'Illegal request' });
 	}
@@ -367,10 +421,123 @@ async function getBotInfo() {
 
 app.get('/', async (req, res) => {
 	const botInfo = await getBotInfo();
-	console.log(botInfo)
 	res.render('index', { botInfo: botInfo });
 });
+
+app.get('/invite', (req, res) => {
+	res.status(308).redirect('https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=1099780115520&integration_type=0&scope=bot+applications.commands')
+})
 
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);
 });
+
+//#region Admin: Roles
+async function adminRolesGet(guild: string) {
+	const selectRolesQuery = `SELECT role_id, level FROM info_roles WHERE guild_id = ?`;
+
+	return new Promise((resolve, reject) => {
+		pool.query(selectRolesQuery, [guild], (err, results) => {
+			if (err) {
+				console.error('Error fetching roles:', err);
+				reject(err);
+			} else {
+				resolve(results);
+			}
+		});
+	});
+}
+
+async function adminRolesRemove(guild: string, role: string) {
+	const deleteRoleQuery = `
+		DELETE FROM info_roles
+		WHERE guild_id = ? AND role_id = ?
+	`;
+
+	return new Promise((resolve, reject) => {
+		pool.query(deleteRoleQuery, [guild, role], (err, results) => {
+			if (err) {
+				console.error('Error removing role:', err);
+				reject(err);
+			} else {
+				resolve(results);
+			}
+		});
+	});
+}
+
+async function adminRolesAdd(guild: string, role: string, level: number) {
+	const insertRoleQuery = `
+		INSERT INTO info_roles (guild_id, role_id, level)
+		VALUES (?, ?, ?)
+	`;
+
+	return new Promise((resolve, reject) => {
+		pool.query(insertRoleQuery, [guild, role, level], (err, results) => {
+			if (err) {
+				console.error('Error adding role:', err);
+				reject(err);
+			} else {
+				resolve(results);
+			}
+		});
+	});
+}
+//#endregion
+
+//#region Admin: Updates
+async function adminUpdatesGet(guildId: string) {
+	const selectUpdatesQuery = `SELECT * FROM info_updates WHERE guild_id = ?`;
+
+	return new Promise((resolve, reject) => {
+		pool.query(selectUpdatesQuery, [guildId], (err, results) => {
+			if (err) {
+				console.error('Error fetching updates:', err);
+				reject(err);
+			} else {
+				resolve(results);
+			}
+		});
+	});
+}
+
+async function adminUpdatesAdd(guildId: string, channelId: string) {
+	const insertUpdatesQuery = `
+		INSERT INTO info_updates (guild_id, enabled, channel_id)
+		VALUES (?, TRUE, ?)
+		ON DUPLICATE KEY UPDATE
+		enabled = TRUE,
+		channel_id = ?
+	`;
+
+	return new Promise((resolve, reject) => {
+		pool.query(insertUpdatesQuery, [guildId, channelId, channelId], (err, results) => {
+			if (err) {
+				console.error('Error enabling updates:', err);
+				reject(err);
+			} else {
+				resolve(results);
+			}
+		});
+	});
+}
+
+async function adminUpdatesRemove(guildId: string) {
+	const deleteUpdatesQuery = `
+		DELETE FROM info_updates
+		WHERE guild_id = ?
+	`;
+
+	return new Promise((resolve, reject) => {
+		pool.query(deleteUpdatesQuery, [guildId], (err, results) => {
+			if (err) {
+				console.error('Error disabling updates:', err);
+				reject(err);
+			} else {
+				resolve(results);
+			}
+		});
+	});
+}
+
+//#endregion

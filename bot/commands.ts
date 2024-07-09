@@ -3,7 +3,7 @@
 import client from '.';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
-import { getGuildLeaderboard, makeGETRequest } from './utils/requestAPI';
+import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 
@@ -259,6 +259,168 @@ const commands: Record<string, Command> = {
 				.catch(console.error);
 		},
 	},
+	roles: {
+		data: {
+			options: [
+				{
+					name: 'action',
+					id: 'action',
+					description: 'Select an action',
+					type: 3,
+					required: true,
+					choices: [
+						{
+							name: 'Get',
+							value: 'get',
+						},
+						{
+							name: 'Add',
+							value: 'add',
+						},
+						{
+							name: 'Remove',
+							value: 'remove',
+						}
+					]
+				},
+				{
+					name: 'role',
+					id: 'role',
+					description: 'Enter the role name. Required for add and remove actions.',
+					type: 8,
+					required: false,
+					choices: []
+				},
+				{
+					name: 'level',
+					id: 'level',
+					description: 'Enter the level. Required for add action.',
+					type: 4,
+					required: false,
+					choices: []
+				}
+			],
+			name: 'roles',
+			description: 'Manage your roles for levels!',
+			integration_types: [0],
+			contexts: [0, 2],
+		},
+		execute: async (interaction) => {
+			if (!interaction.memberPermissions?.has('ManageRoles')) {
+				const errorEmbed = quickEmbed({
+					color: 'Red',
+					title: 'Error!',
+					description: 'Missing permissions: `Manage Roles`'
+				}, interaction);
+				await interaction.reply({
+					ephemeral: true,
+					embeds: [errorEmbed]
+				})
+					.catch(console.error);
+				return;
+			}
+
+			const action = interaction.options.get('action')?.value;
+			const role = interaction.options.get('role')?.value;
+			const level = interaction.options.get('level')?.value;
+			let apiSuccess;
+			let roles;
+			switch (action) {
+				case 'get':
+					roles = await getRoles(interaction.guildId as string);
+					if (Object.keys(roles).length === 0) {
+						await interaction.reply({ ephemeral: true, content: 'No roles found! This was either an error from the API or you have none!' });
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `Roles:\n${roles.map((entry: { role_id: string; level: number }) => `<@&${entry.role_id}> - Level ${entry.level}`).join('\n')}` });
+					return;
+				case 'add':
+					if (!role || !level) {
+						await interaction.reply({ ephemeral: true, content: 'ERROR: One of these two values were not specified! [role, level]' });
+						return;
+					}
+					apiSuccess = await addRole(interaction.guildId as string, role as string, parseInt(level as string));
+					if (apiSuccess) {
+						await interaction.reply({ ephemeral: true, content: `Successfully added <@&${role}> to level ${level}` });
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `ERROR: Couldn't add <@&${role}> to level ${level}` });
+					return;
+				default:
+					if (!role) {
+						await interaction.reply({ ephemeral: true, content: 'ERROR: Role was not specified!' });
+					}
+					apiSuccess = await removeRole(interaction.guildId as string, role as string);
+					if (apiSuccess) {
+						await interaction.reply({ ephemeral: true, content: `Successfully removed <@&${role}>` });
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `ERROR: Couldn't remove <@&${role}>` });
+					return;
+			}
+		}
+	},
+	updates: {
+		data: {
+			options: [{
+				name: 'action',
+				id: 'action',
+				description: 'Note that enabling is in THIS channel and will override the current updates channel!',
+				type: 3,
+				required: true,
+				choices: [
+					{
+						name: 'check',
+						value: 'check',
+					},
+					{
+						name: 'enable',
+						value: 'enable',
+					},
+					{
+						name: 'disable',
+						value: 'disable',
+					}
+				]
+			},],
+			name: 'updates',
+			description: 'Get the latest updates on the bot!',
+			integration_types: [0],
+			contexts: [0, 2],
+		},
+		execute: async (interaction) => {
+			if (!interaction.memberPermissions?.has('ManageRoles')) {
+				const errorEmbed = quickEmbed({
+					color: 'Red',
+					title: 'Error!',
+					description: 'Missing permissions: `Manage Roles`'
+				}, interaction);
+				await interaction.reply({
+					ephemeral: true,
+					embeds: [errorEmbed]
+				})
+					.catch(console.error);
+				return;
+			}
+
+			const action = interaction.options.get('action')?.value;
+			const channelId = interaction.channelId;
+
+			switch (action) {
+				case 'disable':
+					await disableUpdates(interaction.guildId as string);
+					await interaction.reply({ ephemeral: true, content: 'Updates are now disabled for this server' }).catch(console.error);
+					return;
+				case 'enable':
+					await enableUpdates(interaction.guildId as string, channelId as string);
+					await interaction.reply({ ephemeral: true, content: `Updates are now enabled for this server in <#${channelId}>` }).catch(console.error);
+					return;
+				default:
+					await interaction.reply({ ephemeral: true, content: 'Not implemented :3' }).catch(console.error);
+					return;
+			}
+		},
+	}
 };
 
 // Convert commands to a Map
