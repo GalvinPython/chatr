@@ -217,7 +217,7 @@ const commands: Record<string, Command> = {
 
 					const button = new ButtonBuilder()
 						.setLabel('Leaderboard')
-						.setURL(`https://chatr.imgalvin.me/guild/${interaction.guildId}`)
+						.setURL(`https://chatr.imgalvin.me/leaderboard/${interaction.guildId}`)
 						.setStyle(ButtonStyle.Link);
 
 					const row = new ActionRowBuilder<ButtonBuilder>()

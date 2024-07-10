@@ -26,7 +26,6 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	margin-bottom: 20px;
 }
 
 .guildInfo img {
@@ -49,10 +48,10 @@ body {
 
 .leaderboard {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 	grid-gap: 20px;
+	margin-top: 20px;
+	grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
 }
-
 .user {
 	background-color: #333;
 	padding: 20px;
@@ -85,4 +84,19 @@ body {
 .userXP {
 	margin: 0;
 	font-size: large;
+}
+
+a:link,
+a:visited {
+	background-color: turquoise;
+	color: black;
+	padding: 14px 25px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+}
+
+a:hover,
+a:active {
+	background-color: #31ada0;
 }
