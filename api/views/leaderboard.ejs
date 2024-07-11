@@ -30,9 +30,9 @@
 						<h2 class="userName" title="@<%= user.user_name %>">
 							<%= user.user_nickname %>
 						</h2>
-						<p class="userXP">XP: <%= user.xp %>
+						<p class="userXP">XP: <%= user.xp.toLocaleString() %>
 						</p>
-						<p class="userXP">Level <%= user.user_level %> | <%= user.xp %>/<%= user.xp + user.user_xp_needed_next_level %> points to next level (<%= user.user_progress_next_level %>%)
+						<p class="userXP">Level <%= user.user_level.toLocaleString() %> | <%= user.xp.toLocaleString() %>/<%= (user.xp + user.user_xp_needed_next_level).toLocaleString() %> points to next level (<%= user.user_progress_next_level %>%)
 						</p>
 					</div>
 				</div>

@@ -151,7 +151,7 @@ const commands: Record<string, Command> = {
 							{
 								color: 'Blurple',
 								title: 'XP',
-								description: `<@${user}> you have ${xp.xp} XP! (Level ${convertToLevels(xp.xp)})`,
+								description: `<@${user}> you have ${xp.xp.toLocaleString("en-US")} XP! (Level ${convertToLevels(xp.xp).toLocaleString("en-US")})`,
 							},
 							interaction
 						).addFields([
@@ -162,7 +162,7 @@ const commands: Record<string, Command> = {
 							},
 							{
 								name: 'XP Required',
-								value: `${xp.user_xp_needed_next_level} XP`,
+								value: `${xp.user_xp_needed_next_level.toLocaleString("en-US")} XP`,
 								inline: true,
 							},
 						]),
@@ -209,7 +209,7 @@ const commands: Record<string, Command> = {
 						leaderboardEmbed.addFields([
 							{
 								name: `${index + 1}.`,
-								value: `<@${entry.user_id}>: ${entry.xp} XP`,
+								value: `<@${entry.user_id}>: ${entry.xp.toLocaleString("en-US")} XP`,
 								inline: false
 							}
 						]);
