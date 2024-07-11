@@ -142,7 +142,11 @@ async function updateGuildInfo(guild, name, icon, members, callback) {
 
 app.post('/post/:guild/', async (req, res) => {
 	const { guild } = req.params;
-	const { name, icon, members } = req.body;
+	const { name, icon, members, auth } = req.body;
+
+	if (auth !== process.env.AUTH) {
+		return res.status(403).json({ message: 'Access denied. Auth token is missing' });
+	}
 
 	updateGuildInfo(guild, name, icon, members, (err, results) => {
 		if (err) {
