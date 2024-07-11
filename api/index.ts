@@ -1,6 +1,5 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
-import mysql from "mysql2";
 import path from "path";
 import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild } from "./db";
 
@@ -18,7 +17,7 @@ await initTables();
 console.log("Tables initialized");
 
 function authMiddleware(req: Request, res: Response, next: NextFunction) {
-	if (req.headers.authorization !== process.env.AUTH) {
+	if (!req.headers.authorization || req.headers.authorization !== process.env.AUTH) {
 		return res
 			.status(403)
 			.json({ message: "Access denied" });
@@ -278,9 +277,10 @@ app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);
 });
 
+// TODO: actually implement this in a real way
 //#region Admin: Roles
 async function adminRolesGet(guild: string) {
-	const selectRolesQuery = `SELECT role_id, level FROM info_roles WHERE guild_id = ?`;
+	const selectRolesQuery = `SELECT id, level FROM roles WHERE guild_id = ?`;
 
 	return new Promise((resolve, reject) => {
 		pool.query(selectRolesQuery, [guild], (err, results) => {
@@ -296,12 +296,12 @@ async function adminRolesGet(guild: string) {
 
 async function adminRolesRemove(guild: string, role: string) {
 	const deleteRoleQuery = `
-		DELETE FROM info_roles
-		WHERE guild_id = ? AND role_id = ?
+		DELETE FROM roles
+		WHERE id = ? AND guild_id = ?
 	`;
 
 	return new Promise((resolve, reject) => {
-		pool.query(deleteRoleQuery, [guild, role], (err, results) => {
+		pool.query(deleteRoleQuery, [role, guild], (err, results) => {
 			if (err) {
 				console.error("Error removing role:", err);
 				reject(err);
@@ -314,12 +314,12 @@ async function adminRolesRemove(guild: string, role: string) {
 
 async function adminRolesAdd(guild: string, role: string, level: number) {
 	const insertRoleQuery = `
-		INSERT INTO info_roles (guild_id, role_id, level)
+		INSERT INTO roles (id, guild_id, level)
 		VALUES (?, ?, ?)
 	`;
 
 	return new Promise((resolve, reject) => {
-		pool.query(insertRoleQuery, [guild, role, level], (err, results) => {
+		pool.query(insertRoleQuery, [role, guild, level], (err, results) => {
 			if (err) {
 				console.error("Error adding role:", err);
 				reject(err);
@@ -331,9 +331,10 @@ async function adminRolesAdd(guild: string, role: string, level: number) {
 }
 //#endregion
 
+// TODO: actually implement this in a real way
 //#region Admin: Updates
 async function adminUpdatesGet(guildId: string) {
-	const selectUpdatesQuery = `SELECT * FROM info_updates WHERE guild_id = ?`;
+	const selectUpdatesQuery = `SELECT * FROM updates WHERE guild_id = ?`;
 
 	return new Promise((resolve, reject) => {
 		pool.query(selectUpdatesQuery, [guildId], (err, results) => {
@@ -349,17 +350,17 @@ async function adminUpdatesGet(guildId: string) {
 
 async function adminUpdatesAdd(guildId: string, channelId: string) {
 	const insertUpdatesQuery = `
-		INSERT INTO info_updates (guild_id, enabled, channel_id)
-		VALUES (?, TRUE, ?)
+		INSERT INTO updates (guild_id, channel_id, enabled)
+		VALUES (?, ?, TRUE)
 		ON DUPLICATE KEY UPDATE
-		enabled = TRUE,
-		channel_id = ?
+			enabled = TRUE,
+			channel_id = VALUES(channel_id)
 	`;
 
 	return new Promise((resolve, reject) => {
 		pool.query(
 			insertUpdatesQuery,
-			[guildId, channelId, channelId],
+			[guildId, channelId],
 			(err, results) => {
 				if (err) {
 					console.error("Error enabling updates:", err);
@@ -374,7 +375,7 @@ async function adminUpdatesAdd(guildId: string, channelId: string) {
 
 async function adminUpdatesRemove(guildId: string) {
 	const deleteUpdatesQuery = `
-		DELETE FROM info_updates
+		DELETE FROM updates
 		WHERE guild_id = ?
 	`;
 
