@@ -3,6 +3,8 @@
 	"type": "module",
 	"version": "0.1.0",
 	"scripts": {
+		"dev:api": "bun --watch api/index.ts --dev",
+		"dev:bot": "bun --watch bot/index.ts --dev",
 		"api": "bun api/index.ts",
 		"bot": "bun bot/index.ts",
 		"lint": "eslint . --config eslint.config.mjs"

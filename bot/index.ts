@@ -1,8 +1,5 @@
-// https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=274878008384&scope=bot+applications.commands
-//TODO: Type this
-
 // Check if DISCORD_TOKEN has been provided as an environment variable, and is a valid regex pattern
-const discordToken: string | undefined = process.env?.DISCORD_TOKEN
+const discordToken: string | undefined = process.argv.includes('--dev') ? process.env?.DISCORD_TOKEN_DEV : process.env?.DISCORD_TOKEN
 
 if (!discordToken || discordToken === 'YOUR_TOKEN_HERE') throw 'You MUST provide a discord token in .env!'
 

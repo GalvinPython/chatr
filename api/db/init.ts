@@ -8,7 +8,7 @@ export async function initTables() {
 			icon VARCHAR(255),
 			members INT,
 			updates_enabled BOOLEAN DEFAULT FALSE,
-			updates_channel JSON
+			updates_channel VARCHAR(255)
 		)
 	`;
 	const createUsersTable = `
@@ -22,58 +22,58 @@ export async function initTables() {
 			level INT DEFAULT 0,
 			xp_needed_next_level INT,
 			progress_next_level DECIMAL(6, 2),
-			PRIMARY KEY (id, guild_id),
-			FOREIGN KEY (guild_id) REFERENCES guilds(id)
+			PRIMARY KEY (id, guild_id)
 		)
 	`;
+	// FOREIGN KEY (guild_id) REFERENCES guilds(id)
 	const createRolesTable = `
 		CREATE TABLE IF NOT EXISTS roles (
 			id VARCHAR(255) NOT NULL PRIMARY KEY,
 			guild_id VARCHAR(255) NOT NULL,
 			name VARCHAR(255),
-			level INT NOT NULL,
-			FOREIGN KEY (guild_id) REFERENCES guilds(id)
+			level INT NOT NULL
 		)
 	`
+	// FOREIGN KEY (guild_id) REFERENCES guilds(id)
 	const createUpdatesTable = `
 		CREATE TABLE IF NOT EXISTS updates (
 			guild_id VARCHAR(255) NOT NULL PRIMARY KEY,
 			channel_id VARCHAR(255) NOT NULL,
-			enabled BOOLEAN DEFAULT FALSE,
-			FOREIGN KEY (guild_id) REFERENCES guilds(id)
+			enabled BOOLEAN DEFAULT FALSE
 		)
 	`
+	// FOREIGN KEY (guild_id) REFERENCES guilds(id)
 
-	pool.query(createGuildsTable, (err, results) => {
+	pool.query(createGuildsTable, (err) => {
 		if (err) {
 			console.error("Error creating guilds table:", err);
 		} else {
-			console.log("Guilds table created:", results);
+			console.log("Guilds table created");
 		}
 	});
 
-	pool.query(createUsersTable, (err, results) => {
+	pool.query(createUsersTable, (err) => {
 		if (err) {
 			console.error("Error creating users table:", err);
 		} else {
-			console.log("Users table created:", results);
+			console.log("Users table created");
 		}
 	});
 
 
-	pool.query(createRolesTable, (err, results) => {
+	pool.query(createRolesTable, (err) => {
 		if (err) {
 			console.error("Error creating roles table:", err);
 		} else {
-			console.log("Roles table created:", results);
+			console.log("Roles table created");
 		}
 	});
 
-	pool.query(createUpdatesTable, (err, results) => {
+	pool.query(createUpdatesTable, (err) => {
 		if (err) {
 			console.error("Error creating updates table:", err);
 		} else {
-			console.log("Updates table created:", results);
+			console.log("Updates table created");
 		}
 	});
 }
