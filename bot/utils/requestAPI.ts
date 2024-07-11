@@ -1,9 +1,10 @@
 import handleLevelChange from "./handleLevelChange";
 
 export async function makePOSTRequest(guild: string, user: string, xp: number, pfp: string, name: string, nickname: string) {
-	await fetch(`http://localhost:18103/post/${guild}/${user}/${process.env.AUTH}`, {
+	await fetch(`http://localhost:18103/post/${guild}/${user}`, {
 		headers: {
 			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
 		},
 		method: 'POST',
 		body: JSON.stringify({ xp, pfp, name, nickname }),
@@ -42,6 +43,7 @@ export async function updateGuildInfo(guild: string, name: string, icon: string,
 	await fetch(`http://localhost:18103/post/${guild}`, {
 		headers: {
 			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
 		},
 		method: 'POST',
 		body: JSON.stringify({ name, icon, members, auth: process.env.AUTH }),
