@@ -44,7 +44,7 @@ export async function updateGuildInfo(guild: string, name: string, icon: string,
 			'Content-Type': 'application/json',
 		},
 		method: 'POST',
-		body: JSON.stringify({ name, icon, members }),
+		body: JSON.stringify({ name, icon, members, auth: process.env.AUTH }),
 	}).then(res => {
 		return res.json()
 	}).then(data => {
