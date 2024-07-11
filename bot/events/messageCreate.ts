@@ -3,7 +3,7 @@ import client from '../index';
 import { makePOSTRequest, updateGuildInfo } from '../utils/requestAPI';
 
 const cooldowns = new Map<string, number>();
-const cooldownTime = 5 * 1000;
+const cooldownTime = 30 * 1000;
 
 // Run this event whenever a message has been sent
 client.on('messageCreate', async (message: Message) => {
