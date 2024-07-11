@@ -1,0 +1,75 @@
+import type { QueryError } from "mysql2";
+import { pool } from "..";
+
+export interface Guild {
+	id: string;
+	name: string;
+	icon: string;
+	members: number;
+	updates_enabled: boolean;
+	updates_channel: string;
+}
+
+export async function getGuild(guildId: string): Promise<[QueryError | null, Guild | null]> {
+	return new Promise((resolve, reject) => {
+		pool.query("SELECT * FROM guilds WHERE id = ?", [guildId], (err, results) => {
+			if (err) {
+				reject([err, null]);
+			} else {
+				resolve([null, (results as Guild[])[0]]);
+			}
+		});
+	});
+}
+
+export async function updateGuild(guild: Guild): Promise<[QueryError, null] | [null, Guild[]]> {
+	return new Promise((resolve, reject) => {
+		pool.query(
+			`
+			INSERT INTO guilds (id, name, icon, members, updates_enabled, updates_channel)
+			VALUES (?, ?, ?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE
+				name = VALUES(name),
+				icon = VALUES(icon),
+				members = VALUES(members),
+				updates_enabled = VALUES(updates_enabled),
+				updates_channel = VALUES(updates_channel)
+		`,
+			[
+				guild.id,
+				guild.name,
+				guild.icon,
+				guild.members,
+				guild.updates_enabled,
+				guild.updates_channel,
+			],
+			(err, results) => {
+				if (err) {
+					reject([err, null]);
+				} else {
+					resolve([null, results as Guild[]]);
+				}
+			},
+		);
+	});
+}
+
+interface BotInfo {
+	total_guilds: number;
+	total_members: number;
+}
+
+export async function getBotInfo(): Promise<[QueryError | null, BotInfo | null]> {
+	return new Promise((resolve, reject) => {
+		pool.query("SELECT COUNT(*) AS total_guilds, SUM(members) AS total_members FROM guilds", (err, results) => {
+			if (err) {
+				reject([err, null]);
+			} else {
+				resolve([null, {
+					total_guilds: (results as BotInfo[])[0].total_guilds,
+					total_members: (results as BotInfo[])[0].total_members ?? 0,
+				}]);
+			}
+		})
+	})
+}
