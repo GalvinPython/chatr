@@ -144,3 +144,29 @@ export async function disableUpdates(guild: string) {
 	return response.status === 200;
 }
 //#endregion
+
+//#region Cooldowns
+export async function getCooldown(guild: string) {
+	const response = await fetch(`http://localhost:18103/admin/cooldown/${guild}/get`, {
+		"headers": { 
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({}),
+		"method": "POST"
+	});
+	return response.json();
+}
+
+export async function setCooldown(guild: string, cooldown: number) {
+	const response = await fetch(`http://localhost:18103/admin/cooldown/${guild}/set`, {
+		"headers": {
+			'Content-Type': 'application/json', 
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({ extraData: { cooldown } }),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+//#endregion

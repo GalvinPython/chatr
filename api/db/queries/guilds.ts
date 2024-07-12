@@ -6,11 +6,12 @@ export interface Guild {
 	name: string;
 	icon: string;
 	members: number;
+	cooldown: number;
 	updates_enabled: boolean;
 	updates_channel: string;
 }
 
-export async function getGuild(guildId: string): Promise<[QueryError | null, Guild | null]> {
+export async function getGuild(guildId: string): Promise<[QueryError, null] | [null, Guild | null]> {
 	return new Promise((resolve, reject) => {
 		pool.query("SELECT * FROM guilds WHERE id = ?", [guildId], (err, results) => {
 			if (err) {
