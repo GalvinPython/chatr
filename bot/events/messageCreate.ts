@@ -1,13 +1,14 @@
 import { Message } from 'discord.js';
 import client from '../index';
-import { makePOSTRequest, updateGuildInfo } from '../utils/requestAPI';
+import { getCooldown, makePOSTRequest, updateGuildInfo } from '../utils/requestAPI';
 
 const cooldowns = new Map<string, number>();
-const cooldownTime = 30 * 1000;
 
 // Run this event whenever a message has been sent
 client.on('messageCreate', async (message: Message) => {
 	if (message.author.bot) return;
+
+	const cooldownTime = (await getCooldown(message.guildId as string))?.cooldown ?? 30_000;
 	
 	const cooldown = cooldowns.get(message.author.id);
 	if (cooldown && Date.now() - cooldown < cooldownTime) return;

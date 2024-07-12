@@ -235,6 +235,36 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 				default:
 					return res.status(500).json({ message: "Internal server error" });
 			}
+		case "cooldown": 
+			if (target !== "set" && target !== "get") {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			if(target === "set" && !extraData) {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			switch (target) {
+				case "get":
+					try {
+						const [err, data] = await getGuild(guild);
+						if(err) {
+							return res.status(500).json({ message: "Internal server error" });
+						}
+						return res.status(200).json({ cooldown: data?.cooldown ?? 30_000 });
+					} catch (error) {
+						return res.status(500).json({ message: "Internal server error" });
+					}
+				case "set":
+					try {
+						const data = await adminCooldownSet(guild, extraData.cooldown);
+						return res.status(200).json(data);
+					} catch (error) {
+						return res.status(500).json({ message: "Internal server error" });
+					}
+				default:
+					return res.status(500).json({ message: "Internal server error" });
+			}
 		default:
 			return res.status(400).json({ message: "Illegal request" });
 	}
@@ -383,6 +413,29 @@ async function adminUpdatesRemove(guildId: string) {
 		pool.query(deleteUpdatesQuery, [guildId], (err, results) => {
 			if (err) {
 				console.error("Error disabling updates:", err);
+				reject(err);
+			} else {
+				resolve(results);
+			}
+		});
+	});
+}
+
+//#endregion
+
+// TODO: actually implement this in a real way
+//#region Admin: Cooldown
+async function adminCooldownSet(guild: string, cooldown: number) {
+	const updateCooldownQuery = `
+		INSERT INTO guilds (id, cooldown) VALUES (?, ?)
+		ON DUPLICATE KEY UPDATE
+			cooldown = VALUES(cooldown)
+	`;
+
+	return new Promise((resolve, reject) => {
+		pool.query(updateCooldownQuery, [guild, cooldown], (err, results) => {
+			if (err) {
+				console.error("Error setting cooldown:", err);
 				reject(err);
 			} else {
 				resolve(results);
