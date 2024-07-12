@@ -112,19 +112,19 @@ export async function addRole(guild: string, role: string, level: number): Promi
 //#region Updates
 export async function checkIfGuildHasUpdatesEnabled(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/get`, {
-		"headers": { 
-			'Content-Type': 'application/json', 
-			'Authorization': process.env.AUTH as string 
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string
 		},
 		"body": JSON.stringify({}),
 		"method": "POST"
 	});
-	return response.status === 200;
+	return response.status === 200 ? response.json() : {};
 }
 export async function enableUpdates(guild: string, channelId: string) {
 	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/enable`, {
 		"headers": {
-			'Content-Type': 'application/json', 
+			'Content-Type': 'application/json',
 			'Authorization': process.env.AUTH as string,
 		},
 		"body": JSON.stringify({ extraData: { channelId } }),
@@ -134,7 +134,7 @@ export async function enableUpdates(guild: string, channelId: string) {
 }
 export async function disableUpdates(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/disable`, {
-		"headers": { 
+		"headers": {
 			'Content-Type': 'application/json',
 			'Authorization': process.env.AUTH as string,
 		},

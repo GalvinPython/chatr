@@ -3,7 +3,7 @@
 import client from '.';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
-import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates } from './utils/requestAPI';
+import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, checkIfGuildHasUpdatesEnabled } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 
@@ -414,18 +414,34 @@ const commands: Record<string, Command> = {
 
 			const action = interaction.options.get('action')?.value;
 			const channelId = interaction.channelId;
+			let success
+			let data
 
 			switch (action) {
 				case 'disable':
-					await disableUpdates(interaction.guildId as string);
+					success = await disableUpdates(interaction.guildId as string);
+					if (!success) {
+						await interaction.reply({ ephemeral: true, content: 'Error disabling updates for this server' }).catch(console.error);
+						return;
+					}
 					await interaction.reply({ ephemeral: true, content: 'Updates are now disabled for this server' }).catch(console.error);
 					return;
 				case 'enable':
-					await enableUpdates(interaction.guildId as string, channelId as string);
+					success = await enableUpdates(interaction.guildId as string, channelId as string);
+					if (!success) {
+						await interaction.reply({ ephemeral: true, content: 'Error enabling updates for this server' }).catch(console.error);
+						return;
+					}
 					await interaction.reply({ ephemeral: true, content: `Updates are now enabled for this server in <#${channelId}>` }).catch(console.error);
 					return;
 				default:
-					await interaction.reply({ ephemeral: true, content: 'Not implemented :3' }).catch(console.error);
+					data = await checkIfGuildHasUpdatesEnabled(interaction.guildId as string);
+					if (!data || Object.keys(data).length === 0) {
+						await interaction.reply({ ephemeral: true, content: 'No data found' }).catch(console.error);
+						return;
+					}
+					// TODO: Format in embed
+					await interaction.reply({ ephemeral: true, content: JSON.stringify(data, null, 2) }).catch(console.error);
 					return;
 			}
 		},

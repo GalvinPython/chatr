@@ -12,3 +12,4 @@ export const pool = mysql.createPool({
 export * from './init';
 export * from './queries/guilds';
 export * from './queries/users';
+export * from './queries/updates';

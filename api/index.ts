@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import path from "path";
-import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild } from "./db";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, getUpdates, enableUpdates, disableUpdates } from "./db";
 
 const app = express();
 const PORT = 18103;
@@ -159,10 +159,12 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 
 	switch (action) {
 		case "include":
+			// TODO: implement this
 			// target: channel id
 			// run function to include target to guild
 			break;
 		case "exclude":
+			// TODO: implement this
 			// target: channel id
 			// run function to exclude target from guild
 			break;
@@ -177,21 +179,32 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 						return res.status(400).json({ message: "Illegal request" });
 					}
 					try {
-						const data = await adminUpdatesAdd(guild, extraData.channelId);
-						return res.status(200).json(data);
-					} catch (error) {
-						return res.status(500).json({ message: "Internal server error" });
+						const [err, success] = await enableUpdates(guild, extraData.channelId);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
 					}
 				case "disable":
 					try {
-						const data = await adminUpdatesRemove(guild);
-						return res.status(200).json(data);
-					} catch (error) {
-						return res.status(500).json({ message: "Internal server error" });
+						const [err, success] = await disableUpdates(guild);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
 					}
 				default:
 					try {
-						const data = await adminUpdatesGet(guild);
+						const [err, data] = await getUpdates(guild);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						}
 						return res.status(200).json(data);
 					} catch (error) {
 						return res.status(500).json({ message: "Internal server error" });
@@ -329,66 +342,4 @@ async function adminRolesAdd(guild: string, role: string, level: number) {
 		});
 	});
 }
-//#endregion
-
-// TODO: actually implement this in a real way
-//#region Admin: Updates
-async function adminUpdatesGet(guildId: string) {
-	const selectUpdatesQuery = `SELECT * FROM updates WHERE guild_id = ?`;
-
-	return new Promise((resolve, reject) => {
-		pool.query(selectUpdatesQuery, [guildId], (err, results) => {
-			if (err) {
-				console.error("Error fetching updates:", err);
-				reject(err);
-			} else {
-				resolve(results);
-			}
-		});
-	});
-}
-
-async function adminUpdatesAdd(guildId: string, channelId: string) {
-	const insertUpdatesQuery = `
-		INSERT INTO updates (guild_id, channel_id, enabled)
-		VALUES (?, ?, TRUE)
-		ON DUPLICATE KEY UPDATE
-			enabled = TRUE,
-			channel_id = VALUES(channel_id)
-	`;
-
-	return new Promise((resolve, reject) => {
-		pool.query(
-			insertUpdatesQuery,
-			[guildId, channelId],
-			(err, results) => {
-				if (err) {
-					console.error("Error enabling updates:", err);
-					reject(err);
-				} else {
-					resolve(results);
-				}
-			},
-		);
-	});
-}
-
-async function adminUpdatesRemove(guildId: string) {
-	const deleteUpdatesQuery = `
-		DELETE FROM updates
-		WHERE guild_id = ?
-	`;
-
-	return new Promise((resolve, reject) => {
-		pool.query(deleteUpdatesQuery, [guildId], (err, results) => {
-			if (err) {
-				console.error("Error disabling updates:", err);
-				reject(err);
-			} else {
-				resolve(results);
-			}
-		});
-	});
-}
-
 //#endregion
