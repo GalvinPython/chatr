@@ -7,6 +7,7 @@ export async function initTables() {
 			name VARCHAR(255),
 			icon VARCHAR(255),
 			members INT,
+			cooldown INT DEFAULT 30000,
 			updates_enabled BOOLEAN DEFAULT FALSE,
 			updates_channel VARCHAR(255)
 		)

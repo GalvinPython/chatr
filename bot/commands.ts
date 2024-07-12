@@ -3,7 +3,7 @@
 import client from '.';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
-import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, checkIfGuildHasUpdatesEnabled } from './utils/requestAPI';
+import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, checkIfGuildHasUpdatesEnabled } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 
@@ -445,6 +445,82 @@ const commands: Record<string, Command> = {
 					return;
 			}
 		},
+	},
+	cooldown: {
+		data: {
+			options: [{
+				name: 'action',
+				id: 'action',
+				description: 'Select an action',
+				type: 3,
+				required: true,
+				choices: [
+					{
+						name: 'Get',
+						value: 'get',
+					},
+					{
+						name: 'Set',
+						value: 'set',
+					}
+				]
+			},{
+				name: 'cooldown',
+				id: 'cooldown',
+				description: 'Enter the cooldown in seconds. Required for set action.',
+				type: 4,
+				required: false,
+				choices: []
+			}],
+			name: 'cooldown',
+			description: 'Manage the cooldown for XP!',
+			integration_types: [0],
+			contexts: [0, 2],
+		},
+		execute: async (interaction) => {
+			if (!interaction.memberPermissions?.has('ManageChannels')) {
+				const errorEmbed = quickEmbed({
+					color: 'Red',
+					title: 'Error!',
+					description: 'Missing permissions: `Manage Channels`'
+				}, interaction);
+				await interaction.reply({
+					ephemeral: true,
+					embeds: [errorEmbed]
+				})
+					.catch(console.error);
+				return;
+			}
+
+			const action = interaction.options.get('action')?.value;
+			const cooldown = interaction.options.get('cooldown')?.value;
+			
+			let cooldownData;
+			let apiSuccess;
+
+			switch (action) {
+				case 'get':
+					cooldownData = await getCooldown(interaction.guildId as string);
+					if (!cooldownData) {
+						await interaction.reply({ ephemeral: true, content: 'Error fetching cooldown data!' });
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `Cooldown: ${(cooldownData?.cooldown ?? 30_000) / 1000} seconds` });
+					return;
+				case 'set':
+					if (!cooldown) {
+						await interaction.reply({ ephemeral: true, content: 'ERROR: Cooldown was not specified!' });
+						return;
+					}
+					apiSuccess = await setCooldown(interaction.guildId as string, parseInt(cooldown as string) * 1000);
+					if (!apiSuccess) {
+						await interaction.reply({ ephemeral: true, content: 'Error setting cooldown!' });
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `Cooldown set to ${cooldown} seconds` });
+					return;
+			}
+		}
 	}
 };
 
