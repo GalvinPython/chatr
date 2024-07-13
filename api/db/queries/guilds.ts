@@ -25,22 +25,20 @@ export async function updateGuild(guild: Guild): Promise<[QueryError | null, nul
 	return new Promise((resolve, reject) => {
 		pool.query(
 			`
-			INSERT INTO guilds (id, name, icon, members, updates_enabled, updates_channel)
+			INSERT INTO guilds (id, name, icon, members, cooldown)
 			VALUES (?, ?, ?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE
 				name = VALUES(name),
 				icon = VALUES(icon),
 				members = VALUES(members),
-				updates_enabled = VALUES(updates_enabled),
-				updates_channel = VALUES(updates_channel)
+				cooldown = VALUES(cooldown)
 			`,
 			[
 				guild.id,
 				guild.name,
 				guild.icon,
 				guild.members,
-				guild.updates_enabled,
-				guild.updates_channel,
+				guild.cooldown
 			],
 			(err, results) => {
 				console.dir(results, { depth: null });
@@ -52,6 +50,18 @@ export async function updateGuild(guild: Guild): Promise<[QueryError | null, nul
 			},
 		);
 	});
+}
+
+export async function setCooldown(guildId: string, cooldown: number): Promise<[QueryError, null] | [null, Guild]> {
+  return new Promise((resolve, reject) => {
+    pool.query("UPDATE guilds SET cooldown = ? WHERE id = ?", [cooldown, guildId], (err, results) => {
+			if (err) {
+				reject([err, null]);
+			} else {
+				resolve([null, (results as Guild[])[0]]);
+			}
+		});
+  })
 }
 
 interface BotInfo {
@@ -93,7 +103,7 @@ export async function getUsersCount(): Promise<[QueryError | null, number]> {
 			if (err) {
 				reject([err, null]);
 			} else {
-				resolve([null, (results[0] as { count: number }).count]);
+				resolve([null, (results as { count: number }[])[0].count]);
 			}
 		});
 	});

@@ -22,14 +22,15 @@ const rest = new REST().setToken(discordToken)
 const getAppId: {id?: string | null} = await rest.get(Routes.currentApplication()) || { id: null }
 if (!getAppId?.id) throw 'No application ID was able to be found with this token'
 
-const data: any = await rest.put(
+const data = await rest.put(
 	Routes.applicationCommands(getAppId.id),
 	{
 		body: [...commandsMap.values()].map((a) => {
 			return a.data;
 		}),
 	},
-);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+) as any[];
 
 console.log(
 	`Successfully reloaded ${data.length} application (/) commands.`,

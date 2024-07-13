@@ -1,7 +1,7 @@
 // Commands taken from https://github.com/NiaAxern/discord-youtube-subscriber-count/blob/main/src/commands/utilities.ts
 
 import client from '.';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType, type APIApplicationCommandOption } from 'discord.js';
 import { heapStats } from 'bun:jsc';
 import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, checkIfGuildHasUpdatesEnabled } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
@@ -9,7 +9,7 @@ import quickEmbed from './utils/quickEmbed';
 
 interface Command {
 	data: {
-		options: any[];
+		options: APIApplicationCommandOption[];
 		name: string;
 		description: string;
 		integration_types: number[];
@@ -27,7 +27,7 @@ const commands: Record<string, Command> = {
 			integration_types: [0, 1],
 			contexts: [0, 1, 2],
 		},
-		execute: async (interaction: { reply: (arg0: { ephemeral: boolean; content: string; }) => Promise<any>; client: { ws: { ping: any; }; }; }) => {
+		execute: async (interaction) => {
 			await interaction
 				.reply({
 					ephemeral: false,
@@ -44,7 +44,7 @@ const commands: Record<string, Command> = {
 			integration_types: [0, 1],
 			contexts: [0, 1, 2],
 		},
-		execute: async (interaction: { reply: (arg0: { ephemeral: boolean; content: string; }) => Promise<any>; }) => {
+		execute: async (interaction) => {
 			await client.application?.commands?.fetch().catch(console.error);
 			const chat_commands = client.application?.commands.cache.map((a) => {
 				return `</${a.name}:${a.id}>: ${a.description}`;
@@ -65,7 +65,7 @@ const commands: Record<string, Command> = {
 			integration_types: [0, 1],
 			contexts: [0, 1, 2],
 		},
-		execute: async (interaction: { reply: (arg0: { ephemeral: boolean; content: string; }) => Promise<any>; }) => {
+		execute: async (interaction) => {
 			await interaction
 				.reply({
 					ephemeral: true,
@@ -82,7 +82,7 @@ const commands: Record<string, Command> = {
 			integration_types: [0, 1],
 			contexts: [0, 1, 2],
 		},
-		execute: async (interaction: { reply: (arg0: { ephemeral: boolean; content: string; }) => Promise<any>; }) => {
+		execute: async (interaction) => {
 			await interaction
 				.reply({
 					ephemeral: false,
@@ -101,7 +101,7 @@ const commands: Record<string, Command> = {
 			integration_types: [0, 1],
 			contexts: [0, 1, 2],
 		},
-		execute: async (interaction: { reply: (arg0: { ephemeral: boolean; content: string; }) => Promise<any>; }) => {
+		execute: async (interaction) => {
 			const heap = heapStats();
 			Bun.gc(false);
 			await interaction
@@ -205,7 +205,7 @@ const commands: Record<string, Command> = {
 					}, interaction);
 
 					// Add a field for each user with a mention
-					leaderboard.leaderboard.forEach((entry: { user_id: any; xp: any; }, index: number) => {
+					leaderboard.leaderboard.forEach((entry: { user_id: string; xp: number; }, index: number) => {
 						leaderboardEmbed.addFields([
 							{
 								name: `${index + 1}.`,
@@ -273,7 +273,6 @@ const commands: Record<string, Command> = {
 			options: [
 				{
 					name: 'action',
-					id: 'action',
 					description: 'Select an action',
 					type: 3,
 					required: true,
@@ -294,15 +293,12 @@ const commands: Record<string, Command> = {
 				},
 				{
 					name: 'role',
-					id: 'role',
 					description: 'Enter the role name. Required for add and remove actions.',
 					type: 8,
 					required: false,
-					choices: []
 				},
 				{
 					name: 'level',
-					id: 'level',
 					description: 'Enter the level. Required for add action.',
 					type: 4,
 					required: false,
@@ -373,7 +369,6 @@ const commands: Record<string, Command> = {
 		data: {
 			options: [{
 				name: 'action',
-				id: 'action',
 				description: 'Note that enabling is in THIS channel and will override the current updates channel!',
 				type: 3,
 				required: true,
@@ -450,7 +445,6 @@ const commands: Record<string, Command> = {
 		data: {
 			options: [{
 				name: 'action',
-				id: 'action',
 				description: 'Select an action',
 				type: 3,
 				required: true,
@@ -466,7 +460,6 @@ const commands: Record<string, Command> = {
 				]
 			},{
 				name: 'cooldown',
-				id: 'cooldown',
 				description: 'Enter the cooldown in seconds. Required for set action.',
 				type: 4,
 				required: false,
