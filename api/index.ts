@@ -252,7 +252,7 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 				return res.status(400).json({ message: "Illegal request" });
 			}
 
-			if(target === "set" && !extraData) {
+			if (target === "set" && !extraData) {
 				return res.status(400).json({ message: "Illegal request" });
 			}
 
@@ -260,7 +260,7 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 				case "get":
 					try {
 						const [err, data] = await getGuild(guild);
-						if(err) {
+						if (err) {
 							return res.status(500).json({ message: "Internal server error" });
 						}
 						return res.status(200).json({ cooldown: data?.cooldown ?? 30_000 });
@@ -287,12 +287,16 @@ app.get("/leaderboard/:guild", async (req, res) => {
 	const [guildErr, guildData] = await getGuild(guild);
 	const [usersErr, usersData] = await getUsers(guild);
 
+	if (!guildData) {
+		return res.status(404).render("error", { error: { status: 404, message: "The guild does not exist" } });
+	}
+
 	if (guildErr) {
 		console.error("Error fetching guild:", guildErr);
-		res.status(500).json({ message: "Internal server error" });
+		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch guild info. Or the guild does not exist" } });
 	} else if (usersErr) {
 		console.error("Error fetching users:", usersErr);
-		res.status(500).json({ message: "Internal server error" });
+		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch user info" } });
 	}
 
 	res.render("leaderboard", {
@@ -302,10 +306,16 @@ app.get("/leaderboard/:guild", async (req, res) => {
 });
 
 app.get("/", async (_req, res) => {
-	// TODO: handle error
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [err, botInfo] = await getBotInfo();
+	if (err) {
+		console.error("Error fetching bot info:", err);
+		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch bot info" } });
+	}
 	res.render("index", { botInfo });
+});
+
+app.use((_req, res) => {
+	res.status(404).render("error", { error: { status: 404, message: "Page doesn't exist" } });
 });
 
 app.get("/invite", (_req, res) =>

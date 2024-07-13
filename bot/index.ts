@@ -4,7 +4,7 @@ const discordToken: string | undefined = process.argv.includes('--dev') ? proces
 if (!discordToken || discordToken === 'YOUR_TOKEN_HERE') throw 'You MUST provide a discord token in .env!'
 
 // If it has, run the bot
-import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
+import { Client, GatewayIntentBits, REST, Routes, type APIApplicationCommand } from 'discord.js';
 import commandsMap from './commands';
 import fs from 'fs/promises';
 
@@ -19,7 +19,7 @@ const client = new Client({
 // Update the commands
 console.log(`Refreshing ${commandsMap.size} commands`)
 const rest = new REST().setToken(discordToken)
-const getAppId: {id?: string | null} = await rest.get(Routes.currentApplication()) || { id: null }
+const getAppId: { id?: string | null } = await rest.get(Routes.currentApplication()) || { id: null }
 if (!getAppId?.id) throw 'No application ID was able to be found with this token'
 
 const data = await rest.put(
@@ -29,8 +29,7 @@ const data = await rest.put(
 			return a.data;
 		}),
 	},
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-) as any[];
+) as APIApplicationCommand[];
 
 console.log(
 	`Successfully reloaded ${data.length} application (/) commands.`,
