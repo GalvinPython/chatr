@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import path from "path";
-import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, getUpdates, enableUpdates, disableUpdates } from "./db";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, getUpdates, enableUpdates, disableUpdates, setCooldown } from "./db";
 
 const app = express();
 const PORT = 18103;
@@ -269,7 +269,7 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 					}
 				case "set":
 					try {
-						const data = await adminCooldownSet(guild, extraData.cooldown);
+						const data = await setCooldown(guild, extraData.cooldown);
 						return res.status(200).json(data);
 					} catch (error) {
 						return res.status(500).json({ message: "Internal server error" });
@@ -303,6 +303,7 @@ app.get("/leaderboard/:guild", async (req, res) => {
 
 app.get("/", async (_req, res) => {
 	// TODO: handle error
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [err, botInfo] = await getBotInfo();
 	res.render("index", { botInfo });
 });

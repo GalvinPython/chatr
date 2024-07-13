@@ -2,7 +2,7 @@
 import type { TextChannel } from "discord.js";
 import client from "..";
 
-export default async function(guild, user, level) {
+export default async function(guild: string, user: string, level: number) {
 	const hasUpdates = await checkIfGuildHasUpdatesEnabled(guild);
 	if (!hasUpdates.enabled) return;
 
