@@ -34,8 +34,7 @@ app.post("/post/:guild", authMiddleware, async (req, res) => {
 		name,
 		icon,
 		members,
-		updates_enabled: false,
-		updates_channel: "",
+		cooldown: 30_000,
 	});
 
 	if (err) {
@@ -71,10 +70,10 @@ app.post("/post/:guild/:user", authMiddleware, async (req, res) => {
 		((newXp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
 
 	const updateQuery = `
-    INSERT INTO users 
+    INSERT INTO users
         (id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE 
+    ON DUPLICATE KEY UPDATE
         xp = VALUES(xp),
         pfp = VALUES(pfp),
         name = VALUES(name),
@@ -248,7 +247,7 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 				default:
 					return res.status(500).json({ message: "Internal server error" });
 			}
-		case "cooldown": 
+		case "cooldown":
 			if (target !== "set" && target !== "get") {
 				return res.status(400).json({ message: "Illegal request" });
 			}
