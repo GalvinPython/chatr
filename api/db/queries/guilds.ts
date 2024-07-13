@@ -7,8 +7,6 @@ export interface Guild {
 	icon: string;
 	members: number;
 	cooldown: number;
-	updates_enabled: boolean;
-	updates_channel: string;
 }
 
 export async function getGuild(guildId: string): Promise<[QueryError, null] | [null, Guild | null]> {
