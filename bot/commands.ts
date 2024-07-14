@@ -161,13 +161,12 @@ const commands: Record<string, Command> = {
 			  card.setUsername("@" + interaction.user.username)
 			}
 			
-      const color = await getColor(interaction.user.displayAvatarURL({ extension: "png" }));
       card.setStyles({
         progressbar: {
           thumb: {
             style: {
-              backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})`
-            }
+              backgroundColor: (interaction.member as GuildMember).roles.highest.hexColor ?? "#ffffff"
+						}
           }
         }
       })
