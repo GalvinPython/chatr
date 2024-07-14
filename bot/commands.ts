@@ -125,15 +125,22 @@ const commands: Record<string, Command> = {
 	},
 	xp: {
 		data: {
-			options: [],
+			options: [{
+				name: 'user',
+				description: 'The user you want to check the XP of.',
+				type: 6,
+				required: false,
+			}],
 			name: 'xp',
 			description: 'Get your XP and Points',
 			integration_types: [0],
 			contexts: [0, 2],
 		},
 		execute: async (interaction) => {
+			const optionUser = interaction.options.get('user')?.value as string | null;
+			const member = (optionUser ? interaction.guild!.members.cache.get(optionUser) : interaction.member) as GuildMember;
 			const guild = interaction.guild?.id
-			const user = interaction.user.id
+			const user = member.id;
 			const xp = await makeGETRequest(guild as string, user)
 
 			if (!xp) {
@@ -145,8 +152,8 @@ const commands: Record<string, Command> = {
 			}
 			
 			const card = new RankCardBuilder()
-  			.setDisplayName((interaction.member as GuildMember).displayName)
-        .setAvatar(interaction.user.displayAvatarURL()) // user avatar
+  			.setDisplayName(member.displayName)
+        .setAvatar(member.displayAvatarURL()) // user avatar
         .setCurrentXP(300) // current xp
         .setRequiredXP(600) // required xp
         .setLevel(2) // user level
@@ -155,16 +162,16 @@ const commands: Record<string, Command> = {
         .setBackground("#23272a")
 			
 			if (interaction.user.discriminator !== "0") {
-			  card.setUsername("#" + interaction.user.discriminator)
+			  card.setUsername("#" + member.user.discriminator)
 			} else {
-			  card.setUsername("@" + interaction.user.username)
+			  card.setUsername("@" + member.user.username)
 			}
 			
       card.setStyles({
         progressbar: {
           thumb: {
             style: {
-              backgroundColor: (interaction.member as GuildMember).roles.highest.hexColor ?? "#ffffff"
+              backgroundColor: member.roles.highest.hexColor ?? "#ffffff"
 						}
           }
         }
