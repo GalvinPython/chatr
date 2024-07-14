@@ -7,7 +7,6 @@ import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, ena
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 import { Font, RankCardBuilder } from 'canvacord';
-import { getColor } from 'colorthief'
 
 Font.loadDefault();
 
