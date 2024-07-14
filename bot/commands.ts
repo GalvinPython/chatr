@@ -1,11 +1,14 @@
 // Commands taken from https://github.com/NiaAxern/discord-youtube-subscriber-count/blob/main/src/commands/utilities.ts
 
 import client from '.';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType, type APIApplicationCommandOption } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType, type APIApplicationCommandOption, GuildMember, AttachmentBuilder, ComponentType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
 import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, checkIfGuildHasUpdatesEnabled } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
+import { Font, RankCardBuilder } from 'canvacord';
+
+Font.loadDefault();
 
 interface Command {
 	data: {
@@ -122,39 +125,115 @@ const commands: Record<string, Command> = {
 	},
 	xp: {
 		data: {
-			options: [],
+			options: [{
+				name: 'user',
+				description: 'The user you want to check the XP of.',
+				type: 6,
+				required: false,
+			}],
 			name: 'xp',
 			description: 'Get your XP and Points',
 			integration_types: [0],
 			contexts: [0, 2],
 		},
 		execute: async (interaction) => {
-			if (interaction?.guildId) {
-				const guild = interaction.guild?.id
-				const user = interaction.user.id
-				const xp = await makeGETRequest(guild as string, user)
+			await interaction.deferReply()
 
-				if (!xp) {
-					await interaction.reply({
-						ephemeral: true,
-						content: "No XP data available."
-					});
-					return;
-				}
+			const optionUser = interaction.options.get('user')?.value as string | null;
+			const member = (optionUser ? interaction.guild!.members.cache.get(optionUser) : interaction.member) as GuildMember;
+			await interaction.guild!.members.fetch({ user: member.id, force: true })
+			const guild = interaction.guild?.id
+			const user = member.id;
+			const leaderboard = await getGuildLeaderboard(guild as string);
+			const xp = await makeGETRequest(guild as string, user)
 
-				const progress = xp.user_progress_next_level;
-				const progressBar = createProgressBar(progress);
-
+			if (!xp || leaderboard.length === 0) {
 				await interaction.reply({
-					embeds: [
+					ephemeral: true,
+					content: "No XP data available."
+				});
+				return;
+			}
+			
+			const rank = leaderboard.leaderboard.findIndex((entry: ({ id: string; })) => entry.id === user) + 1;
+			
+			const card = new RankCardBuilder()
+  			.setDisplayName(member.displayName)
+        .setAvatar(member.displayAvatarURL({ forceStatic: true, size: 4096 })) // user avatar
+        .setCurrentXP(xp.xp) // current xp
+        .setRequiredXP(xp.xp_needed_next_level) // required xp
+        .setLevel(xp.level) // user level
+        .setRank(rank) // user rank
+        .setOverlay(member.user.banner ? 95 : 90) // overlay percentage. Overlay is a semi-transparent layer on top of the background
+        .setBackground(member.user.bannerURL({ forceStatic: true, size: 4096 }) ?? "#23272a")
+			
+			if (interaction.user.discriminator !== "0") {
+			  card.setUsername("#" + member.user.discriminator)
+			} else {
+			  card.setUsername("@" + member.user.username)
+			}
+			
+			const color = member.roles.highest.hexColor ?? "#ffffff"
+
+      card.setStyles({
+        progressbar: {
+          thumb: {
+            style: {
+              backgroundColor: color
+						}
+          }
+        },
+      })
+			
+      const image = await card.build({
+        format: "png"
+      });
+      const attachment = new AttachmentBuilder(image, { name: `${user}.png` });
+
+			const msg = await interaction.followUp({
+			  files: [attachment],
+				components: [
+				  new ActionRowBuilder<ButtonBuilder>().setComponents(
+						new ButtonBuilder()
+						  .setCustomId("text-mode")
+						  .setLabel("Use text mode")
+						  .setStyle(ButtonStyle.Secondary)
+					)
+				],
+				fetchReply: true
+			});
+			
+      const collector = msg.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: 60 * 1000
+      });
+      
+      collector.on("collect", async (i) => {
+        if (i.user.id !== user) 
+          return i.reply({
+            content: "You're not the one who initialized this message! Try running /xp on your own.",
+            ephemeral: true
+          });
+       
+        if (i.customId !== "text-mode") return;
+        
+        const progress = xp.progress_next_level;
+        const progressBar = createProgressBar(progress);
+        
+        await i.update({
+          embeds: [
 						quickEmbed(
 							{
-								color: 'Blurple',
+								color,
 								title: 'XP',
-								description: `<@${user}> you have ${xp.xp.toLocaleString("en-US")} XP! (Level ${convertToLevels(xp.xp).toLocaleString("en-US")})`,
+								description: `<@${user}> you have ${xp.xp.toLocaleString()} XP! (Level ${convertToLevels(xp.xp)})`,
 							},
 							interaction
 						).addFields([
+							{
+								name: 'Rank',
+								value: `#${rank.toLocaleString()}`,
+							},
 							{
 								name: 'Progress To Next Level',
 								value: `${progressBar} ${progress}%`,
@@ -162,18 +241,20 @@ const commands: Record<string, Command> = {
 							},
 							{
 								name: 'XP Required',
-								value: `${xp.user_xp_needed_next_level.toLocaleString("en-US")} XP`,
+								value: `${xp.xp_needed_next_level.toLocaleString()} XP`,
 								inline: true,
 							},
 						]),
 					],
-				});
-
-				function createProgressBar(progress: number): string {
-					const filled = Math.floor(progress / 10);
-					const empty = 10 - filled;
-					return '▰'.repeat(filled) + '▱'.repeat(empty);
-				}
+					files: [],
+					components: []
+        })
+      })
+      
+      function createProgressBar(progress: number): string {
+				const filled = Math.floor(progress / 10);
+				const empty = 10 - filled;
+				return '▰'.repeat(filled) + '▱'.repeat(empty);
 			}
 		}
 	},
@@ -487,7 +568,7 @@ const commands: Record<string, Command> = {
 
 			const action = interaction.options.get('action')?.value;
 			const cooldown = interaction.options.get('cooldown')?.value;
-			
+
 			let cooldownData;
 			let apiSuccess;
 
