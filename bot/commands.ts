@@ -3,7 +3,7 @@
 import client from '.';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType, type APIApplicationCommandOption, GuildMember, AttachmentBuilder, ComponentType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
-import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, checkIfGuildHasUpdatesEnabled } from './utils/requestAPI';
+import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 import { Font, RankCardBuilder } from 'canvacord';
@@ -161,7 +161,7 @@ const commands: Record<string, Command> = {
   			.setDisplayName(member.displayName)
         .setAvatar(member.displayAvatarURL({ forceStatic: true, size: 4096 })) // user avatar
         .setCurrentXP(xp.xp) // current xp
-        .setRequiredXP(xp.xp_needed_next_level) // required xp
+        .setRequiredXP(xp.xp + xp.xp_needed_next_level) // required xp
         .setLevel(xp.level) // user level
         .setRank(rank) // user rank
         .setOverlay(member.user.banner ? 95 : 90) // overlay percentage. Overlay is a semi-transparent layer on top of the background
@@ -450,24 +450,37 @@ const commands: Record<string, Command> = {
 		data: {
 			options: [{
 				name: 'action',
-				description: 'Note that enabling is in THIS channel and will override the current updates channel!',
+				description: 'Select an action',
 				type: 3,
 				required: true,
 				choices: [
 					{
-						name: 'check',
+						name: 'Check',
 						value: 'check',
 					},
 					{
-						name: 'enable',
+						name: 'Enable',
 						value: 'enable',
 					},
 					{
-						name: 'disable',
+						name: 'Disable',
 						value: 'disable',
-					}
+					},
+					{
+						name: 'Set',
+						value: 'set',
+					},
+					{
+						name: 'Reset to Default',
+						value: 'reset',
+					},
 				]
-			},],
+			},{
+				name: 'channel',
+				description: 'Enter the channel ID. Required for set action.',
+				type: 7,
+				required: false,
+			}],
 			name: 'updates',
 			description: 'Get the latest updates on the bot!',
 			integration_types: [0],
@@ -494,6 +507,14 @@ const commands: Record<string, Command> = {
 			let data
 
 			switch (action) {
+				case 'enable':
+					success = await enableUpdates(interaction.guildId as string);
+					if (!success) {
+						await interaction.reply({ ephemeral: true, content: 'Error enabling updates for this server' }).catch(console.error);
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `Updates are now enabled for this server` }).catch(console.error);
+					return;
 				case 'disable':
 					success = await disableUpdates(interaction.guildId as string);
 					if (!success) {
@@ -502,22 +523,54 @@ const commands: Record<string, Command> = {
 					}
 					await interaction.reply({ ephemeral: true, content: 'Updates are now disabled for this server' }).catch(console.error);
 					return;
-				case 'enable':
-					success = await enableUpdates(interaction.guildId as string, channelId as string);
-					if (!success) {
-						await interaction.reply({ ephemeral: true, content: 'Error enabling updates for this server' }).catch(console.error);
+				case 'set': 
+					if(!channelId) {
+						await interaction.reply({ ephemeral: true, content: 'ERROR: Channel was not specified!' });
 						return;
 					}
-					await interaction.reply({ ephemeral: true, content: `Updates are now enabled for this server in <#${channelId}>` }).catch(console.error);
+					success = await setUpdatesChannel(interaction.guildId as string, channelId);
+					if (!success) {
+						await interaction.reply({ ephemeral: true, content: 'Error setting updates channel for this server' }).catch(console.error);
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `Updates channel has been set to <#${channelId}>` }).catch(console.error);
 					return;
+				case 'reset':
+					success = await setUpdatesChannel(interaction.guildId as string, null);
+					if (!success) {
+						await interaction.reply({ ephemeral: true, content: 'Error resetting updates channel for this server' }).catch(console.error);
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `Updates channel has been reset to default` }).catch(console.error);
+					return
 				default:
-					data = await checkIfGuildHasUpdatesEnabled(interaction.guildId as string);
+					data = await getUpdatesChannel(interaction.guildId as string);
 					if (!data || Object.keys(data).length === 0) {
 						await interaction.reply({ ephemeral: true, content: 'No data found' }).catch(console.error);
 						return;
 					}
-					// TODO: Format in embed
-					await interaction.reply({ ephemeral: true, content: JSON.stringify(data, null, 2) }).catch(console.error);
+					await interaction.reply({
+						embeds: [
+							quickEmbed({
+								color: 'Blurple',
+								title: 'Updates',
+								description: 'Updates for this server',
+							}, interaction)
+								.addFields(
+									{
+										name: 'Enabled',
+										value: data.enabled ? 'Yes' : 'No',
+										inline: true,
+									},
+									{
+										name: 'Channel',
+										value: data.channel ? `<#${data.channel}>` : 'N/A',
+										inline: true,
+									},
+								)
+						],
+						ephemeral: true
+					}).catch(console.error);
 					return;
 			}
 		},

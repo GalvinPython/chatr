@@ -7,7 +7,10 @@ export interface Guild {
 	icon: string;
 	members: number;
 	cooldown: number;
+	updates_enabled: 0 | 1;
+	updates_channel_id: string | null;
 }
+
 
 export async function getGuild(guildId: string): Promise<[QueryError, null] | [null, Guild | null]> {
 	return new Promise((resolve, reject) => {
@@ -21,24 +24,22 @@ export async function getGuild(guildId: string): Promise<[QueryError, null] | [n
 	});
 }
 
-export async function updateGuild(guild: Guild): Promise<[QueryError | null, null] | [null, Guild[]]> {
+export async function updateGuild(guild: Omit<Guild, "cooldown" | "updates_enabled" | "updates_channel_id">): Promise<[QueryError | null, null] | [null, Guild[]]> {
 	return new Promise((resolve, reject) => {
 		pool.query(
 			`
-			INSERT INTO guilds (id, name, icon, members, cooldown)
+			INSERT INTO guilds (id, name, icon, members)
 			VALUES (?, ?, ?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE
 				name = VALUES(name),
 				icon = VALUES(icon),
-				members = VALUES(members),
-				cooldown = VALUES(cooldown)
+				members = VALUES(members)
 			`,
 			[
 				guild.id,
 				guild.name,
 				guild.icon,
 				guild.members,
-				guild.cooldown
 			],
 			(err, results) => {
 				console.dir(results, { depth: null });

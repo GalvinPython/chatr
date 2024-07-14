@@ -7,36 +7,18 @@ export interface Updates {
 	enabled: boolean;
 }
 
-export async function getUpdates(guildId: string): Promise<[QueryError | null, Updates[] | null]> {
-	return new Promise((resolve, reject) => {
-		pool.query("SELECT * FROM updates WHERE guild_id = ?", [guildId], (err, results) => {
-			if (err) {
-				reject([err, null]);
-			} else {
-				resolve([null, results as Updates[]]);
-			}
-		});
-	});
-}
-
-export async function enableUpdates(guildId: string, channelId: string): Promise<[QueryError | null, true | null]> {
+export async function enableUpdates(guildId: string): Promise<[QueryError | null, boolean]> {
 	return new Promise((resolve, reject) => {
 		pool.query(
 			`
-			INSERT INTO updates (guild_id, channel_id, enabled)
-			VALUES (?, ?, ?)
-			ON DUPLICATE KEY UPDATE
-				channel_id = VALUES(channel_id),
-				enabled = VALUES(enabled)
+				UPDATE guilds SET updates_enabled = TRUE WHERE id = ?
 			`,
 			[
 				guildId,
-				channelId,
-				true,
 			],
 			(err) => {
 				if (err) {
-					reject([err, null]);
+					reject([err, false]);
 				} else {
 					resolve([null, true]);
 				}
@@ -45,21 +27,39 @@ export async function enableUpdates(guildId: string, channelId: string): Promise
 	});
 }
 
-export async function disableUpdates(guildId: string): Promise<[QueryError | null, true | null]> {
+export async function disableUpdates(guildId: string): Promise<[QueryError | null, boolean]> {
 	return new Promise((resolve, reject) => {
 		pool.query(
 			`
-			UPDATE updates
-			SET enabled = ?
-			WHERE guild_id = ?
+				UPDATE guilds SET updates_enabled = FALSE WHERE id = ?
 			`,
 			[
-				false,
 				guildId,
 			],
 			(err) => {
 				if (err) {
-					reject([err, null]);
+					reject([err, false]);
+				} else {
+					resolve([null, true]);
+				}
+			},
+		);
+	});
+}
+
+export async function setUpdatesChannel(guildId: string, channelId: string | null): Promise<[QueryError | null, boolean]> {
+	return new Promise((resolve, reject) => {
+		pool.query(
+			`
+				UPDATE guilds SET updates_channel_id = ? WHERE id = ?
+			`,
+			[
+				channelId,
+				guildId,
+			],
+			(err) => {
+				if (err) {
+					reject([err, false]);
 				} else {
 					resolve([null, true]);
 				}

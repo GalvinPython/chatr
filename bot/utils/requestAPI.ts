@@ -1,6 +1,6 @@
 import handleLevelChange from "./handleLevelChange";
 
-export async function makePOSTRequest(guild: string, user: string, xp: number, pfp: string, name: string, nickname: string) {
+export async function makePOSTRequest(guild: string, user: string, channel: string, xp: number, pfp: string, name: string, nickname: string) {
 	await fetch(`http://localhost:18103/post/${guild}/${user}`, {
 		headers: {
 			'Content-Type': 'application/json',
@@ -11,7 +11,7 @@ export async function makePOSTRequest(guild: string, user: string, xp: number, p
 	}).then(res => {
 		return res.json()
 	}).then(data => {
-		if (data.sendUpdateEvent) handleLevelChange(guild, user, data.level)
+		if (data.sendUpdateEvent) handleLevelChange(guild, user, channel, data.level)
 	})
 }
 
@@ -110,7 +110,7 @@ export async function addRole(guild: string, role: string, level: number): Promi
 //#endregion
 
 //#region Updates
-export async function checkIfGuildHasUpdatesEnabled(guild: string) {
+export async function getUpdatesChannel(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/get`, {
 		"headers": {
 			'Content-Type': 'application/json',
@@ -121,13 +121,24 @@ export async function checkIfGuildHasUpdatesEnabled(guild: string) {
 	});
 	return response.status === 200 ? response.json() : {};
 }
-export async function enableUpdates(guild: string, channelId: string) {
-	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/enable`, {
+export async function setUpdatesChannel(guild: string, channelId: string | null) {
+	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/set`, {
 		"headers": {
 			'Content-Type': 'application/json',
 			'Authorization': process.env.AUTH as string,
 		},
 		"body": JSON.stringify({ extraData: { channelId } }),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+export async function enableUpdates(guild: string) {
+	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/enable`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({}),
 		"method": "POST"
 	});
 	return response.status === 200;
