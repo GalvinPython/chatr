@@ -144,9 +144,10 @@ const commands: Record<string, Command> = {
 			await interaction.guild!.members.fetch({ user: member.id, force: true })
 			const guild = interaction.guild?.id
 			const user = member.id;
+			const leaderboard = await getGuildLeaderboard(guild as string);
 			const xp = await makeGETRequest(guild as string, user)
 
-			if (!xp) {
+			if (!xp || leaderboard.length === 0) {
 				await interaction.reply({
 					ephemeral: true,
 					content: "No XP data available."
@@ -154,13 +155,15 @@ const commands: Record<string, Command> = {
 				return;
 			}
 			
+			const rank = leaderboard.leaderboard.findIndex((entry: ({ id: string; })) => entry.id === user) + 1;
+			
 			const card = new RankCardBuilder()
   			.setDisplayName(member.displayName)
         .setAvatar(member.displayAvatarURL({ forceStatic: true, size: 4096 })) // user avatar
-        .setCurrentXP(300) // current xp
-        .setRequiredXP(600) // required xp
-        .setLevel(2) // user level
-        .setRank(5) // user rank
+        .setCurrentXP(xp.xp) // current xp
+        .setRequiredXP(xp.xp_needed_next_level) // required xp
+        .setLevel(xp.level) // user level
+        .setRank(rank) // user rank
         .setOverlay(member.user.banner ? 95 : 90) // overlay percentage. Overlay is a semi-transparent layer on top of the background
         .setBackground(member.user.bannerURL({ forceStatic: true, size: 4096 }) ?? "#23272a")
 			
@@ -170,11 +173,13 @@ const commands: Record<string, Command> = {
 			  card.setUsername("@" + member.user.username)
 			}
 			
+			const color = member.roles.highest.hexColor ?? "#ffffff"
+
       card.setStyles({
         progressbar: {
           thumb: {
             style: {
-              backgroundColor: member.roles.highest.hexColor ?? "#ffffff"
+              backgroundColor: color
 						}
           }
         },
@@ -219,7 +224,7 @@ const commands: Record<string, Command> = {
           embeds: [
 						quickEmbed(
 							{
-								color: 'Blurple',
+								color,
 								title: 'XP',
 								description: `<@${user}> you have ${xp.xp.toLocaleString()} XP! (Level ${convertToLevels(xp.xp)})`,
 							},
