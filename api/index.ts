@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import path from "path";
-import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, getUpdates, enableUpdates, disableUpdates, setCooldown } from "./db";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel } from "./db";
 
 const app = express();
 const PORT = 18103;
@@ -34,7 +34,6 @@ app.post("/post/:guild", authMiddleware, async (req, res) => {
 		name,
 		icon,
 		members,
-		cooldown: 30_000,
 	});
 
 	if (err) {
@@ -56,6 +55,7 @@ app.post("/post/:guild/:user", authMiddleware, async (req, res) => {
 		console.error("Error fetching XP:", err);
 		return res.status(500).json({ message: "Internal server error" });
 	}
+
 
 	const currentXp = result?.xp ?? 0;
 	const currentLevelSaved = result?.level ?? 0;
@@ -168,15 +168,12 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 			// run function to exclude target from guild
 			break;
 		case "updates":
-			if (target !== "enable" && target !== "disable" && target !== "get") {
+			if (target !== "enable" && target !== "disable" && target !== "set" && target !== "get") {
 				return res.status(400).json({ message: "Illegal request" });
 			}
 
 			switch (target) {
 				case "enable":
-					if (!extraData || !extraData.channelId) {
-						return res.status(400).json({ message: "Illegal request" });
-					}
 					try {
 						const [err, success] = await enableUpdates(guild, extraData.channelId);
 						if (err) {
@@ -198,13 +195,31 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 					} catch (err) {
 						return res.status(500).json({ message: "Internal server error", err });
 					}
+				case 'set': 
+					if (!extraData || typeof extraData.channelId === "undefined") {
+						return res.status(400).json({ message: "Illegal request" });
+					}
+
+					try {
+						const [err, success] = await setUpdatesChannel(guild, extraData.channelId);
+						if (err) {
+							return res.status(500).json({ message: 'Internal server error', err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: 'Internal server error', err });
+					}
 				default:
 					try {
-						const [err, data] = await getUpdates(guild);
+						const [err, data] = await getGuild(guild);
 						if (err) {
 							return res.status(500).json({ message: "Internal server error", err });
 						}
-						return res.status(200).json(data);
+						return res.status(200).json({
+							enabled: ((data?.updates_enabled ?? 1) === 1),
+							channel: data?.updates_channel_id ?? null,
+						});
 					} catch (error) {
 						return res.status(500).json({ message: "Internal server error" });
 					}

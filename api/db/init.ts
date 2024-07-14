@@ -7,7 +7,9 @@ export async function initTables() {
 			name VARCHAR(255),
 			icon VARCHAR(255),
 			members INT,
-			cooldown INT DEFAULT 30000
+			cooldown INT DEFAULT 30000,
+			updates_enabled BOOLEAN DEFAULT FALSE,
+			updates_channel_id VARCHAR(255) DEFAULT NULL
 		)
 	`;
   const createUsersTable = `
@@ -34,14 +36,6 @@ export async function initTables() {
 		)
 	`;
   // FOREIGN KEY (guild_id) REFERENCES guilds(id)
-  const createUpdatesTable = `
-		CREATE TABLE IF NOT EXISTS updates (
-			guild_id VARCHAR(255) NOT NULL PRIMARY KEY,
-			channel_id VARCHAR(255) NOT NULL,
-			enabled BOOLEAN DEFAULT FALSE
-		)
-	`;
-  // FOREIGN KEY (guild_id) REFERENCES guilds(id)
 
   pool.query(createGuildsTable, (err) => {
     if (err) {
@@ -64,14 +58,6 @@ export async function initTables() {
       console.error("Error creating roles table:", err);
     } else {
       console.log("Roles table created");
-    }
-  });
-
-  pool.query(createUpdatesTable, (err) => {
-    if (err) {
-      console.error("Error creating updates table:", err);
-    } else {
-      console.log("Updates table created");
     }
   });
 }
