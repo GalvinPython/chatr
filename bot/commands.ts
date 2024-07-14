@@ -137,8 +137,11 @@ const commands: Record<string, Command> = {
 			contexts: [0, 2],
 		},
 		execute: async (interaction) => {
+			await interaction.deferReply()
+
 			const optionUser = interaction.options.get('user')?.value as string | null;
 			const member = (optionUser ? interaction.guild!.members.cache.get(optionUser) : interaction.member) as GuildMember;
+			await interaction.guild!.members.fetch({ user: member.id, force: true })
 			const guild = interaction.guild?.id
 			const user = member.id;
 			const xp = await makeGETRequest(guild as string, user)
@@ -153,13 +156,13 @@ const commands: Record<string, Command> = {
 			
 			const card = new RankCardBuilder()
   			.setDisplayName(member.displayName)
-        .setAvatar(member.displayAvatarURL()) // user avatar
+        .setAvatar(member.displayAvatarURL({ forceStatic: true, size: 4096 })) // user avatar
         .setCurrentXP(300) // current xp
         .setRequiredXP(600) // required xp
         .setLevel(2) // user level
         .setRank(5) // user rank
-        .setOverlay(90) // overlay percentage. Overlay is a semi-transparent layer on top of the background
-        .setBackground("#23272a")
+        .setOverlay(member.user.banner ? 95 : 90) // overlay percentage. Overlay is a semi-transparent layer on top of the background
+        .setBackground(member.user.bannerURL({ forceStatic: true, size: 4096 }) ?? "#23272a")
 			
 			if (interaction.user.discriminator !== "0") {
 			  card.setUsername("#" + member.user.discriminator)
@@ -174,7 +177,7 @@ const commands: Record<string, Command> = {
               backgroundColor: member.roles.highest.hexColor ?? "#ffffff"
 						}
           }
-        }
+        },
       })
 			
       const image = await card.build({
@@ -182,7 +185,7 @@ const commands: Record<string, Command> = {
       });
       const attachment = new AttachmentBuilder(image, { name: `${user}.png` });
 
-			const msg = await interaction.reply({
+			const msg = await interaction.followUp({
 			  files: [attachment],
 				components: [
 				  new ActionRowBuilder<ButtonBuilder>().setComponents(
