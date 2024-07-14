@@ -231,6 +231,10 @@ const commands: Record<string, Command> = {
 							interaction
 						).addFields([
 							{
+								name: 'Rank',
+								value: `#${rank.toLocaleString()}`,
+							},
+							{
 								name: 'Progress To Next Level',
 								value: `${progressBar} ${progress}%`,
 								inline: true,
