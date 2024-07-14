@@ -213,7 +213,7 @@ const commands: Record<string, Command> = {
 							{
 								color: 'Blurple',
 								title: 'XP',
-								description: `<@${user}> you have ${xp.xp} XP! (Level ${convertToLevels(xp.xp)})`,
+								description: `<@${user}> you have ${xp.xp.toLocaleString()} XP! (Level ${convertToLevels(xp.xp)})`,
 							},
 							interaction
 						).addFields([
