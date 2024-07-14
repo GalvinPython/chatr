@@ -222,7 +222,7 @@ const commands: Record<string, Command> = {
 							},
 							{
 								name: 'XP Required',
-								value: `${xp.xp_needed_next_level} XP`,
+								value: `${xp.xp_needed_next_level.toLocaleString()} XP`,
 								inline: true,
 							},
 						]),
