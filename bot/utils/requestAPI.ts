@@ -54,6 +54,30 @@ export async function updateGuildInfo(guild: string, name: string, icon: string,
 	})
 }
 
+export async function setXP(guild: string, user: string, xp: number) {
+	const response = await fetch(`http://localhost:18103/admin/set/${guild}/xp`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({ extraData: { user, value: xp } }),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+
+export async function setLevel(guild: string, user: string, level: number) {
+	const response = await fetch(`http://localhost:18103/admin/set/${guild}/level`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({ extraData: { user, value: level } }),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+
 //#region Roles
 export async function getRoles(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/roles/${guild}/get`, {

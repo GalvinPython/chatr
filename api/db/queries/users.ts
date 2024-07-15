@@ -36,3 +36,43 @@ export async function getUser(userId: string, guildId: string): Promise<[QueryEr
 		});
 	});
 }
+
+export async function setXP(guildId: string, userId: string, xp: number): Promise<[QueryError | null, boolean]> {
+	const newLevel = Math.floor(Math.sqrt(xp / 100));
+	const nextLevel = newLevel + 1;
+	const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+	const xpNeededForNextLevel = nextLevelXp - xp;
+	const currentLevelXp = Math.pow(newLevel, 2) * 100;
+	const progressToNextLevel =
+		((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+
+	return new Promise((resolve, reject) => {
+		pool.query("UPDATE users SET xp = ?, level = ?, xp_needed_next_level = ?, progress_next_level = ? WHERE id = ? AND guild_id = ?", [xp, newLevel, xpNeededForNextLevel.toFixed(2), progressToNextLevel.toFixed(2), userId, guildId], (err) => {
+			if (err) {
+				reject([err, false]);
+			} else {
+				resolve([null, true]);
+			}
+		});
+	});
+}
+
+export async function setLevel(guildId: string, userId: string, level: number): Promise<[QueryError | null, boolean]> {
+	const newXp = Math.pow(level, 2) * 100;
+	const nextLevel = level + 1;
+	const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+	const xpNeededForNextLevel = nextLevelXp - newXp;
+	const currentLevelXp = Math.pow(level, 2) * 100;
+	const progressToNextLevel =
+		((newXp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+
+	return new Promise((resolve, reject) => {
+		pool.query("UPDATE users SET xp = ?, level = ?, xp_needed_next_level = ?, progress_next_level = ? WHERE id = ? AND guild_id = ?", [newXp, level, xpNeededForNextLevel.toFixed(2), progressToNextLevel.toFixed(2), userId, guildId], (err) => {
+			if (err) {
+				reject([err, false]);
+			} else {
+				resolve([null, true]);
+			}
+		});
+	});
+}
