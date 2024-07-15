@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import path from "path";
-import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel } from "./db";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel } from "./db";
 
 const app = express();
 const PORT = 18103;
@@ -292,6 +292,42 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 				default:
 					return res.status(500).json({ message: "Internal server error" });
 			}
+		case "set": {
+			if (target !== "xp" && target !== "level") {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			if(!extraData || !extraData.user || !extraData.value) {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			switch (target) {
+				case "xp":
+					try {
+						const [err, success] = await setXP(guild, extraData.user, extraData.value);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				case "level":
+					try {
+						const [err, success] = await setLevel(guild, extraData.user, extraData.value);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				default:
+					return res.status(500).json({ message: "Internal server error" });
+			}
+		}
 		default:
 			return res.status(400).json({ message: "Illegal request" });
 	}

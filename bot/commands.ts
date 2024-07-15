@@ -3,7 +3,7 @@
 import client from '.';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType, type APIApplicationCommandOption, GuildMember, AttachmentBuilder, ComponentType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
-import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel } from './utils/requestAPI';
+import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel, setXP, setLevel } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 import { Font, RankCardBuilder } from 'canvacord';
@@ -154,74 +154,74 @@ const commands: Record<string, Command> = {
 				});
 				return;
 			}
-			
+
 			const rank = leaderboard.leaderboard.findIndex((entry: ({ id: string; })) => entry.id === user) + 1;
-			
+
 			const card = new RankCardBuilder()
-  			.setDisplayName(member.displayName)
-        .setAvatar(member.displayAvatarURL({ forceStatic: true, size: 4096 })) // user avatar
-        .setCurrentXP(xp.xp) // current xp
-        .setRequiredXP(xp.xp + xp.xp_needed_next_level) // required xp
-        .setLevel(xp.level) // user level
-        .setRank(rank) // user rank
-        .setOverlay(member.user.banner ? 95 : 90) // overlay percentage. Overlay is a semi-transparent layer on top of the background
-        .setBackground(member.user.bannerURL({ forceStatic: true, size: 4096 }) ?? "#23272a")
-			
+				.setDisplayName(member.displayName)
+				.setAvatar(member.displayAvatarURL({ forceStatic: true, size: 4096 })) // user avatar
+				.setCurrentXP(xp.xp) // current xp
+				.setRequiredXP(xp.xp + xp.xp_needed_next_level) // required xp
+				.setLevel(xp.level) // user level
+				.setRank(rank) // user rank
+				.setOverlay(member.user.banner ? 95 : 90) // overlay percentage. Overlay is a semi-transparent layer on top of the background
+				.setBackground(member.user.bannerURL({ forceStatic: true, size: 4096 }) ?? "#23272a")
+
 			if (interaction.user.discriminator !== "0") {
-			  card.setUsername("#" + member.user.discriminator)
+				card.setUsername("#" + member.user.discriminator)
 			} else {
-			  card.setUsername("@" + member.user.username)
+				card.setUsername("@" + member.user.username)
 			}
-			
+
 			const color = member.roles.highest.hexColor ?? "#ffffff"
 
-      card.setStyles({
-        progressbar: {
-          thumb: {
-            style: {
-              backgroundColor: color
+			card.setStyles({
+				progressbar: {
+					thumb: {
+						style: {
+							backgroundColor: color
 						}
-          }
-        },
-      })
-			
-      const image = await card.build({
-        format: "png"
-      });
-      const attachment = new AttachmentBuilder(image, { name: `${user}.png` });
+					}
+				},
+			})
+
+			const image = await card.build({
+				format: "png"
+			});
+			const attachment = new AttachmentBuilder(image, { name: `${user}.png` });
 
 			const msg = await interaction.followUp({
-			  files: [attachment],
+				files: [attachment],
 				components: [
-				  new ActionRowBuilder<ButtonBuilder>().setComponents(
+					new ActionRowBuilder<ButtonBuilder>().setComponents(
 						new ButtonBuilder()
-						  .setCustomId("text-mode")
-						  .setLabel("Use text mode")
-						  .setStyle(ButtonStyle.Secondary)
+							.setCustomId("text-mode")
+							.setLabel("Use text mode")
+							.setStyle(ButtonStyle.Secondary)
 					)
 				],
 				fetchReply: true
 			});
-			
-      const collector = msg.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: 60 * 1000
-      });
-      
-      collector.on("collect", async (i) => {
-        if (i.user.id !== user) 
-          return i.reply({
-            content: "You're not the one who initialized this message! Try running /xp on your own.",
-            ephemeral: true
-          });
-       
-        if (i.customId !== "text-mode") return;
-        
-        const progress = xp.progress_next_level;
-        const progressBar = createProgressBar(progress);
-        
-        await i.update({
-          embeds: [
+
+			const collector = msg.createMessageComponentCollector({
+				componentType: ComponentType.Button,
+				time: 60 * 1000
+			});
+
+			collector.on("collect", async (i) => {
+				if (i.user.id !== user)
+					return i.reply({
+						content: "You're not the one who initialized this message! Try running /xp on your own.",
+						ephemeral: true
+					});
+
+				if (i.customId !== "text-mode") return;
+
+				const progress = xp.progress_next_level;
+				const progressBar = createProgressBar(progress);
+
+				await i.update({
+					embeds: [
 						quickEmbed(
 							{
 								color,
@@ -248,10 +248,10 @@ const commands: Record<string, Command> = {
 					],
 					files: [],
 					components: []
-        })
-      })
-      
-      function createProgressBar(progress: number): string {
+				})
+			})
+
+			function createProgressBar(progress: number): string {
 				const filled = Math.floor(progress / 10);
 				const empty = 10 - filled;
 				return '▰'.repeat(filled) + '▱'.repeat(empty);
@@ -286,11 +286,11 @@ const commands: Record<string, Command> = {
 					}, interaction);
 
 					// Add a field for each user with a mention
-					leaderboard.leaderboard.forEach((entry: { user_id: string; xp: number; }, index: number) => {
+					leaderboard.leaderboard.forEach((entry: { id: string; xp: number; }, index: number) => {
 						leaderboardEmbed.addFields([
 							{
 								name: `${index + 1}.`,
-								value: `<@${entry.user_id}>: ${entry.xp.toLocaleString("en-US")} XP`,
+								value: `<@${entry.id}>: ${entry.xp.toLocaleString("en-US")} XP`,
 								inline: false
 							}
 						]);
@@ -475,7 +475,7 @@ const commands: Record<string, Command> = {
 						value: 'reset',
 					},
 				]
-			},{
+			}, {
 				name: 'channel',
 				description: 'Enter the channel ID. Required for set action.',
 				type: 7,
@@ -523,8 +523,8 @@ const commands: Record<string, Command> = {
 					}
 					await interaction.reply({ ephemeral: true, content: 'Updates are now disabled for this server' }).catch(console.error);
 					return;
-				case 'set': 
-					if(!channelId) {
+				case 'set':
+					if (!channelId) {
 						await interaction.reply({ ephemeral: true, content: 'ERROR: Channel was not specified!' });
 						return;
 					}
@@ -592,7 +592,7 @@ const commands: Record<string, Command> = {
 						value: 'set',
 					}
 				]
-			},{
+			}, {
 				name: 'cooldown',
 				description: 'Enter the cooldown in seconds. Required for set action.',
 				type: 4,
@@ -645,6 +645,79 @@ const commands: Record<string, Command> = {
 						return;
 					}
 					await interaction.reply({ ephemeral: true, content: `Cooldown set to ${cooldown} seconds` });
+					return;
+			}
+		}
+	},
+	set: {
+		data: {
+			options: [{
+				name: 'user',
+				description: 'The user you want to update the XP or level of.',
+				type: 6,
+				required: true,
+			}, {
+				name: 'type',
+				description: 'Select the data type to set',
+				type: 3,
+				required: true,
+				choices: [
+					{
+						name: 'XP',
+						value: 'xp',
+					},
+					{
+						name: 'Level',
+						value: 'level',
+					}
+				]
+			}, {
+				name: 'value',
+				description: 'The new value to set',
+				type: 3,
+				required: true,
+			}],
+			name: 'set',
+			description: 'Set the XP or level of a user!',
+			integration_types: [0],
+			contexts: [0, 2],
+		},
+		execute: async (interaction) => {
+			if (!interaction.memberPermissions?.has('ManageGuild')) {
+				const errorEmbed = quickEmbed({
+					color: 'Red',
+					title: 'Error!',
+					description: 'Missing permissions: `Manage Server`'
+				}, interaction);
+				await interaction.reply({
+					ephemeral: true,
+					embeds: [errorEmbed]
+				})
+					.catch(console.error);
+				return;
+			}
+
+			const user = interaction.options.get('user')?.value as string;
+			const type = interaction.options.get('type')?.value;
+			const value = interaction.options.get('value')?.value;
+
+			let apiSuccess;
+			switch (type) {
+				case 'xp':
+					apiSuccess = await setXP(interaction.guildId as string, user, parseInt(value as string));
+					if (!apiSuccess) {
+						await interaction.reply({ ephemeral: true, content: 'Error setting XP!' });
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `XP set to ${value} for <@${user}>` });
+					return;
+				case 'level':
+					apiSuccess = await setLevel(interaction.guildId as string, user, parseInt(value as string));
+					if (!apiSuccess) {
+						await interaction.reply({ ephemeral: true, content: 'Error setting level!' });
+						return;
+					}
+					await interaction.reply({ ephemeral: true, content: `Level set to ${value} for <@${user}>` });
 					return;
 			}
 		}
