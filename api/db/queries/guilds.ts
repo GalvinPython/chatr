@@ -29,7 +29,7 @@ export async function updateGuild(guild: Omit<Guild, "cooldown" | "updates_enabl
 		pool.query(
 			`
 			INSERT INTO guilds (id, name, icon, members)
-			VALUES (?, ?, ?, ?, ?, ?)
+			VALUES (?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE
 				name = VALUES(name),
 				icon = VALUES(icon),
@@ -42,7 +42,6 @@ export async function updateGuild(guild: Omit<Guild, "cooldown" | "updates_enabl
 				guild.members,
 			],
 			(err, results) => {
-				console.dir(results, { depth: null });
 				if (err) {
 					reject([err, null]);
 				} else {
