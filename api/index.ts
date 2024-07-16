@@ -472,55 +472,46 @@ async function syncFromPolaris(guild: string) {
 		return [new Error("No users found"), false];
 	}
 
-	console.log(users.length)
+	try {
+		for(const user of users) {
+			const xpValue = user.xp;
+			const level = Math.floor(Math.sqrt(xpValue / 100));
+			const nextLevel = level + 1;
+			const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+			const xpNeededForNextLevel = nextLevelXp - xpValue;
+			const currentLevelXp = Math.pow(level, 2) * 100;
+			const progressToNextLevel =
+				((xpValue - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
 
-	const insertQuery = `
-		INSERT INTO users
-			(id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level)
-		VALUES
-	`;
-
-	const insertValues: string[] = [];
-
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	for(const _user of users) {
-		insertValues.push(`(?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+			await new Promise((resolve, reject) => {
+				pool.query(
+					`INSERT INTO users (id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					[
+						user.id,
+						guild,
+						xpValue,
+						user.avatar,
+						user.username,
+						user.nickname ?? user.displayName,
+						level,
+						xpNeededForNextLevel,
+						progressToNextLevel.toFixed(2),
+					],
+					(err) => {
+						if (err) {
+							console.error("Error syncing from Polaris:", err);
+							reject(err);
+						} else {
+							resolve(null);
+						}
+					},
+				);
+			});
+		}
+		return [null, true]
+	} catch (err) {
+		return [err, false];
 	}
 
-	console.log(insertValues.length)
-
-	const formattedUsers = users.map((user: { id: string, xp: number, avatar: string, username: string, nickname: string, displayName: string }) => {
-		const xpValue = user.xp;
-		const level = Math.floor(Math.sqrt(xpValue / 100));
-		const nextLevel = level + 1;
-		const nextLevelXp = Math.pow(nextLevel, 2) * 100;
-		const xpNeededForNextLevel = nextLevelXp - xpValue;
-		const currentLevelXp = Math.pow(level, 2) * 100;
-		const progressToNextLevel =
-			((xpValue - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
-		return [
-			user.id,
-			guild,
-			xpValue,
-			user.avatar,
-			user.username,
-			user.nickname ?? user.displayName,
-			level,
-			xpNeededForNextLevel,
-			progressToNextLevel.toFixed(2),
-		];
-	})
-
-	return new Promise((resolve, reject) => {
-		pool.query(insertQuery + "\n" + insertValues.join(","), formattedUsers, (err) => 
-		{
-			if (err) {
-				console.error("Error syncing from Polaris:", err);
-				reject([err, false]);
-			} else {
-				resolve([null, true]);
-			}
-		});
-	});
 }
 //#endregion
