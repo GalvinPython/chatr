@@ -205,3 +205,17 @@ export async function setCooldown(guild: string, cooldown: number) {
 	return response.status === 200;
 }
 //#endregion
+
+//#region Sync
+export async function syncFromPolaris(guild: string) {
+	const response = await fetch(`http://localhost:18103/admin/sync/${guild}/polaris`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({}),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+//#endregion

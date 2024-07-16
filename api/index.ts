@@ -338,6 +338,9 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 					try {
 						const [err, success] = await syncFromPolaris(guild);
 						if (err) {
+							if(err instanceof Error && err.message === "Server not found in Polaris") {
+								return res.status(404).json({ message: "Server not found in Polaris" });
+							}
 							return res.status(500).json({ message: "Internal server error", err });
 						} else {
 							return res.status(200).json(success);
@@ -461,6 +464,9 @@ async function adminRolesAdd(guild: string, role: string, level: number) {
 async function syncFromPolaris(guild: string) {
 	const res = await fetch(`https://gdcolon.com/polaris/api/leaderboard/${guild}`);
 	const data = await res.json();
+	if(data.apiError && data.code === "invalidServer") {
+		return [new Error("Server not found in Polaris"), false];
+	}
 	const users = data.leaderboard;
 	for(let i = 1; i < data.pageInfo.pageCount; i++) {
 		const res = await fetch(`https://gdcolon.com/polaris/api/leaderboard/${guild}?page=${i + 1}`);
