@@ -175,7 +175,7 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 			switch (target) {
 				case "enable":
 					try {
-						const [err, success] = await enableUpdates(guild, extraData.channelId);
+						const [err, success] = await enableUpdates(guild);
 						if (err) {
 							return res.status(500).json({ message: "Internal server error", err });
 						} else {
@@ -328,6 +328,28 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 					return res.status(500).json({ message: "Internal server error" });
 			}
 		}
+		case "sync": {
+			if(target !== "polaris") {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+			
+			switch(target) {
+				case "polaris": {
+					try {
+						const [err, success] = await syncFromPolaris(guild);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				}
+				default:
+					return res.status(500).json({ message: "Internal server error" });
+			}
+		}
 		default:
 			return res.status(400).json({ message: "Illegal request" });
 	}
@@ -429,6 +451,74 @@ async function adminRolesAdd(guild: string, role: string, level: number) {
 				reject(err);
 			} else {
 				resolve(results);
+			}
+		});
+	});
+}
+//#endregion
+
+//#region Syncing
+async function syncFromPolaris(guild: string) {
+	const res = await fetch(`https://gdcolon.com/polaris/api/leaderboard/${guild}`);
+	const data = await res.json();
+	const users = data.leaderboard;
+	for(let i = 1; i < data.pageInfo.pageCount; i++) {
+		const res = await fetch(`https://gdcolon.com/polaris/api/leaderboard/${guild}?page=${i + 1}`);
+		const data = await res.json();
+		users.push(...data.leaderboard);
+	}
+
+	if(users.length === 0) {
+		return [new Error("No users found"), false];
+	}
+
+	console.log(users.length)
+
+	const insertQuery = `
+		INSERT INTO users
+			(id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level)
+		VALUES
+	`;
+
+	const insertValues: string[] = [];
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	for(const _user of users) {
+		insertValues.push(`(?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+	}
+
+	console.log(insertValues.length)
+
+	const formattedUsers = users.map((user: { id: string, xp: number, avatar: string, username: string, nickname: string, displayName: string }) => {
+		const xpValue = user.xp;
+		const level = Math.floor(Math.sqrt(xpValue / 100));
+		const nextLevel = level + 1;
+		const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+		const xpNeededForNextLevel = nextLevelXp - xpValue;
+		const currentLevelXp = Math.pow(level, 2) * 100;
+		const progressToNextLevel =
+			((xpValue - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+		return [
+			user.id,
+			guild,
+			xpValue,
+			user.avatar,
+			user.username,
+			user.nickname ?? user.displayName,
+			level,
+			xpNeededForNextLevel,
+			progressToNextLevel.toFixed(2),
+		];
+	})
+
+	return new Promise((resolve, reject) => {
+		pool.query(insertQuery + "\n" + insertValues.join(","), formattedUsers, (err) => 
+		{
+			if (err) {
+				console.error("Error syncing from Polaris:", err);
+				reject([err, false]);
+			} else {
+				resolve([null, true]);
 			}
 		});
 	});
