@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import path from "path";
-import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel } from "./db";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild } from "./db";
 
 const app = express();
 const PORT = 18103;
@@ -42,6 +42,17 @@ app.post("/post/:guild", authMiddleware, async (req, res) => {
 		res.status(200).json(results);
 	}
 });
+
+app.post('/post/:guild/remove', authMiddleware, async (req, res) => {
+	const { guild } = req.params;
+	const [err, results] = await removeGuild(guild);
+
+	if (err) {
+		res.status(500).json({ message: "Internal server error" });
+	} else {
+		res.status(200).json(results);
+	}
+})
 
 app.post("/post/:guild/:user", authMiddleware, async (req, res) => {
 	const { guild, user } = req.params;
@@ -339,7 +350,7 @@ app.get("/leaderboard/:guild", async (req, res) => {
 	const [usersErr, usersData] = await getUsers(guild);
 
 	if (!guildData) {
-		return res.status(404).render("error", { error: { status: 404, message: "The guild does not exist" } });
+		return res.status(404).render("error", { error: { status: 404, message: "The guild does not exist. If Chatr is no longer in this server, the data for this guild has been locked from public access" } });
 	}
 
 	if (guildErr) {
