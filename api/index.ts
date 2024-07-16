@@ -186,7 +186,7 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 			switch (target) {
 				case "enable":
 					try {
-						const [err, success] = await enableUpdates(guild, extraData.channelId);
+						const [err, success] = await enableUpdates(guild);
 						if (err) {
 							return res.status(500).json({ message: "Internal server error", err });
 						} else {
