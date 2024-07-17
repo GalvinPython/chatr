@@ -544,6 +544,8 @@ async function syncFromMee6(guild: string) {
 	}
 	const users = data.players;
 	let pageNumber = 1;
+	// this is needed because MEE6 doesn't give us the total amount of pages
+	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		const res = await fetch(`https://mee6.xyz/api/plugins/levels/leaderboard/${guild}?limit=1000&page=${pageNumber}`);
 		const data = await res.json();
