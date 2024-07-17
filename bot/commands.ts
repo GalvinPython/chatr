@@ -3,7 +3,7 @@
 import client from '.';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType, type APIApplicationCommandOption, GuildMember, AttachmentBuilder, ComponentType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
-import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel, setXP, setLevel, syncFromPolaris } from './utils/requestAPI';
+import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel, setXP, setLevel, syncFromBot } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 import { Font, RankCardBuilder } from 'canvacord';
@@ -734,6 +734,10 @@ const commands: Record<string, Command> = {
 						name: 'Polaris',
 						value: 'polaris',
 					},
+					{
+						name: 'MEE6',
+						value: 'mee6',
+					}
 				]
 			}],
 			name: 'sync',
@@ -757,18 +761,19 @@ const commands: Record<string, Command> = {
 			}
 
 			const bot = interaction.options.get('bot')?.value;
+			const formattedBotNames = {
+				'polaris': 'Polaris',
+				'mee6': 'MEE6'
+			};
 
-			let apiSuccess;
-			switch (bot) {
-				case 'polaris':
-					apiSuccess = await syncFromPolaris(interaction.guildId as string);
-					if (!apiSuccess) {
-						await interaction.reply({ ephemeral: true, content: 'Error syncing data! This might mean that Polaris is not set up for this server, or the leaderboard for this server is not public.' });
-						return;
-					}
-					await interaction.reply({ ephemeral: true, content: 'Data synced!' });
-					return;
+			await interaction.reply({ ephemeral: true, content: `Syncing data from ${formattedBotNames[bot as keyof typeof formattedBotNames]}...` });
+			const apiSuccess = await syncFromBot(interaction.guildId as string, bot as string);
+			if (!apiSuccess) {
+				await interaction.editReply({ content: `Error syncing data! This might mean that ${formattedBotNames[bot as keyof typeof formattedBotNames]} is not set up for this server, or the leaderboard for this server is not public.` });
+				return;
 			}
+			await interaction.editReply({ content: 'Data synced!' });
+			return;
 		}
 	}
 };

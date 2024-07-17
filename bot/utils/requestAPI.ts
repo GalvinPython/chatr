@@ -207,8 +207,8 @@ export async function setCooldown(guild: string, cooldown: number) {
 //#endregion
 
 //#region Sync
-export async function syncFromPolaris(guild: string) {
-	const response = await fetch(`http://localhost:18103/admin/sync/${guild}/polaris`, {
+export async function syncFromBot(guild: string, bot: string) {
+	const response = await fetch(`http://localhost:18103/admin/sync/${guild}/${bot}`, {
 		"headers": {
 			'Content-Type': 'application/json',
 			'Authorization': process.env.AUTH as string,
