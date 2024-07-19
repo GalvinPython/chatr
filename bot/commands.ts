@@ -737,7 +737,11 @@ const commands: Record<string, Command> = {
 					{
 						name: 'MEE6',
 						value: 'mee6',
-					}
+					},
+					{
+						name: 'Lurkr',
+						value: 'lurkr',
+					},
 				]
 			}],
 			name: 'sync',
@@ -763,7 +767,8 @@ const commands: Record<string, Command> = {
 			const bot = interaction.options.get('bot')?.value;
 			const formattedBotNames = {
 				'polaris': 'Polaris',
-				'mee6': 'MEE6'
+				'mee6': 'MEE6',
+				'lurkr': 'Lurkr'
 			};
 
 			await interaction.reply({ ephemeral: true, content: `Syncing data from ${formattedBotNames[bot as keyof typeof formattedBotNames]}...` });

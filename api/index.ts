@@ -340,7 +340,7 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 			}
 		}
 		case "sync": {
-			if (target !== "polaris" && target !== "mee6") {
+			if (target !== "polaris" && target !== "mee6" && target !== "lurkr") {
 				return res.status(400).json({ message: "Illegal request" });
 			}
 
@@ -366,6 +366,21 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 						if (err) {
 							if (err instanceof Error && err.message === "Server not found in MEE6") {
 								return res.status(404).json({ message: "Server not found in MEE6" });
+							}
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				}
+				case "lurkr": {
+					try {
+						const [err, success] = await syncFromLurkr(guild);
+						if (err) {
+							if (err instanceof Error && err.message === "Server not found in Lurkr") {
+								return res.status(404).json({ message: "Server not found in Lurkr" });
 							}
 							return res.status(500).json({ message: "Internal server error", err });
 						} else {
@@ -597,6 +612,71 @@ async function syncFromMee6(guild: string) {
 					(err) => {
 						if (err) {
 							console.error("Error syncing from MEE6:", err);
+							reject(err);
+						} else {
+							resolve(null);
+						}
+					},
+				);
+			});
+		}
+		return [null, true]
+	} catch (err) {
+		return [err, false];
+	}
+}
+
+async function syncFromLurkr(guild: string) {
+	const res = await fetch(`https://api.lurkr.gg/v2/levels/${guild}?page=1`);
+	const data = await res.json();
+	if (data.message === "Guild no found") {
+		return [new Error("Server not found in Lurkr"), false];
+	}
+	const users = data.levels;
+
+	if (users.length === 0) {
+		return [new Error("No users found"), false];
+	}
+
+	let pageNumber = 2;
+	// this is needed because Lurkr doesn't give us the total amount of pages
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
+		const res = await fetch(`https://api.lurkr.gg/v2/levels/${guild}?page=${pageNumber}`);
+		const data = await res.json();
+		users.push(...data.levels);
+		if (data.levels.length < 100) break;
+		pageNumber += 1;
+	}
+
+	try {
+		for (const user of users) {
+			const xpValue = user.xp;
+			const level = Math.floor(Math.sqrt(user.xp / 100));
+			const nextLevel = level + 1;
+			const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+			const xpNeededForNextLevel = nextLevelXp - user.xp;
+			const currentLevelXp = Math.pow(level, 2) * 100;
+			const progressToNextLevel =
+				((user.xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+
+			await new Promise((resolve, reject) => {
+				pool.query(
+					`INSERT INTO users (id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					[
+						user.userId,
+						guild,
+						xpValue,
+						`https://cdn.discordapp.com/avatars/${user.userId}/${user.user.avatar}.webp`,
+						user.user.username,
+						user.user.username,
+						level,
+						xpNeededForNextLevel,
+						progressToNextLevel.toFixed(2),
+					],
+					(err) => {
+						if (err) {
+							console.error("Error syncing from Lurkr:", err);
 							reject(err);
 						} else {
 							resolve(null);
