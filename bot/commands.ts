@@ -3,7 +3,7 @@
 import client from '.';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType, type APIApplicationCommandOption, GuildMember, AttachmentBuilder, ComponentType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
-import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel, setXP, setLevel } from './utils/requestAPI';
+import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel, setXP, setLevel, syncFromBot } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 import { Font, RankCardBuilder } from 'canvacord';
@@ -720,6 +720,65 @@ const commands: Record<string, Command> = {
 					await interaction.reply({ ephemeral: true, content: `Level set to ${value} for <@${user}>` });
 					return;
 			}
+		}
+	},
+	sync: {
+		data: {
+			options: [{
+				name: 'bot',
+				description: 'Select the bot to sync XP data from',
+				type: 3,
+				required: true,
+				choices: [
+					{
+						name: 'Polaris',
+						value: 'polaris',
+					},
+					{
+						name: 'MEE6',
+						value: 'mee6',
+					},
+					{
+						name: 'Lurkr',
+						value: 'lurkr',
+					},
+				]
+			}],
+			name: 'sync',
+			description: 'Sync XP data from another bot!',
+			integration_types: [0],
+			contexts: [0, 2],
+		},
+		execute: async (interaction) => {
+			if (!interaction.memberPermissions?.has('ManageGuild')) {
+				const errorEmbed = quickEmbed({
+					color: 'Red',
+					title: 'Error!',
+					description: 'Missing permissions: `Manage Server`'
+				}, interaction);
+				await interaction.reply({
+					ephemeral: true,
+					embeds: [errorEmbed]
+				})
+					.catch(console.error);
+				return;
+			}
+
+			const bot = interaction.options.get('bot')?.value;
+			const formattedBotNames = {
+				'polaris': 'Polaris',
+				'mee6': 'MEE6',
+				'lurkr': 'Lurkr'
+			};
+
+			await interaction.reply({ ephemeral: true, content: `Syncing data from ${formattedBotNames[bot as keyof typeof formattedBotNames]}...` });
+			const apiSuccess = await syncFromBot(interaction.guildId as string, bot as string);
+			if (!apiSuccess) {
+				await interaction.editReply({ content: `Error syncing data! This might mean that ${formattedBotNames[bot as keyof typeof formattedBotNames]} is not set up for this server, or the leaderboard for this server is not public.` });
+				return;
+			}
+			await interaction.editReply({ content: 'Data synced!' });
+			return;
 		}
 	}
 };
