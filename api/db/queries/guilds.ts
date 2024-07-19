@@ -14,7 +14,7 @@ export interface Guild {
 
 export async function getGuild(guildId: string): Promise<[QueryError, null] | [null, Guild | null]> {
 	return new Promise((resolve, reject) => {
-		pool.query("SELECT * FROM guilds WHERE id = ?", [guildId], (err, results) => {
+		pool.query("SELECT * FROM guilds WHERE id = ? AND is_in_guild = ?", [guildId, true], (err, results) => {
 			if (err) {
 				reject([err, null]);
 			} else {
@@ -28,18 +28,20 @@ export async function updateGuild(guild: Omit<Guild, "cooldown" | "updates_enabl
 	return new Promise((resolve, reject) => {
 		pool.query(
 			`
-			INSERT INTO guilds (id, name, icon, members)
-			VALUES (?, ?, ?, ?)
+			INSERT INTO guilds (id, name, icon, members, is_in_guild)
+			VALUES (?, ?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE
 				name = VALUES(name),
 				icon = VALUES(icon),
-				members = VALUES(members)
+				members = VALUES(members),
+				is_in_guild = VALUES(is_in_guild)
 			`,
 			[
 				guild.id,
 				guild.name,
 				guild.icon,
 				guild.members,
+				true,
 			],
 			(err, results) => {
 				if (err) {
@@ -49,6 +51,18 @@ export async function updateGuild(guild: Omit<Guild, "cooldown" | "updates_enabl
 				}
 			},
 		);
+	});
+}
+
+export async function removeGuild(guildId: string): Promise<[QueryError, null] | [null, true]> {
+	return new Promise((resolve, reject) => {
+		pool.query("UPDATE guilds SET is_in_guild = ? WHERE id = ?", [false, guildId], (err) => {
+			if (err) {
+				reject([err, null]);
+			} else {
+				resolve([null, true]);
+			}
+		});
 	});
 }
 

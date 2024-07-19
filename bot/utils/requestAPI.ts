@@ -54,6 +54,16 @@ export async function updateGuildInfo(guild: string, name: string, icon: string,
 	})
 }
 
+export async function removeGuild(guild: string) {
+	await fetch(`http://localhost:18103/post/${guild}/remove`, {
+		headers: {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		method: 'POST',
+	})
+}
+
 export async function setXP(guild: string, user: string, xp: number) {
 	const response = await fetch(`http://localhost:18103/admin/set/${guild}/xp`, {
 		"headers": {

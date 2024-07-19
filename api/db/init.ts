@@ -9,7 +9,8 @@ export async function initTables() {
 			members INT,
 			cooldown INT DEFAULT 30000,
 			updates_enabled BOOLEAN DEFAULT FALSE,
-			updates_channel_id VARCHAR(255) DEFAULT NULL
+			updates_channel_id VARCHAR(255) DEFAULT NULL,
+			is_in_guild BOOLEAN DEFAULT TRUE
 		)
 	`;
   const createUsersTable = `
