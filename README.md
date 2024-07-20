@@ -48,6 +48,9 @@ Thanks to @ToastedDev for his contributions to the bot. Here are some changes th
 * Added a rankcard to /xp (#17)
 * User management (#19)
 * Added syncing (#24)
+### Patches
+#### Beta 0.1.1
+* Fixed wrong data being shown on the leaderboard
 
 # Roadmap
 * Rewritten site using NextJS
@@ -55,5 +58,6 @@ Thanks to @ToastedDev for his contributions to the bot. Here are some changes th
 * Better privacy controls
 * Live updates
 * Track guilds and users xp
+
 
 Want to add more features? Join our server (linked above) and add a post to `feature-requests`

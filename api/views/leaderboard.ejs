@@ -32,7 +32,7 @@
 						</h2>
 						<p class="userXP">XP: <%= user.xp.toLocaleString() %>
 						</p>
-						<p class="userXP">Level <%= user.level.toLocaleString() %> | <%= user.xp.toLocaleString() %>/<%= (user.xp + user.xp_needed_next_level).toLocaleString() %> points to next level (<%= user.progress_next_level %>%)
+						<p class="userXP">Level <%= user.level.toLocaleString() %> | <%= user.xp_needed_next_level.toLocaleString() %>/<%= (user.xp + user.xp_needed_next_level).toLocaleString() %> points to next level (<%= user.progress_next_level %>%)
 						</p>
 					</div>
 				</div>
