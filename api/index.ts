@@ -431,17 +431,13 @@ app.get("/", async (_req, res) => {
 	res.render("index", { botInfo });
 });
 
+app.get("/invite", (_req, res) => res.status(308).redirect("https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=1099780115520&integration_type=0&scope=bot+applications.commands"));
+
+app.get('/support', (_req, res) => res.status(308).redirect('https://discord.gg/fpJVTkVngm'));
+
 app.use((_req, res) => {
 	res.status(404).render("error", { error: { status: 404, message: "Page doesn't exist" } });
 });
-
-app.get("/invite", (_req, res) =>
-	res
-		.status(308)
-		.redirect(
-			"https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=1099780115520&integration_type=0&scope=bot+applications.commands",
-		)
-);
 
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);
