@@ -1,16 +1,17 @@
 import handleLevelChange from "./handleLevelChange";
 
-export async function makePOSTRequest(guild: string, user: string, xp: number, pfp: string, name: string, nickname: string) {
-	await fetch(`http://localhost:18103/post/${guild}/${user}/${process.env.AUTH}`, {
+export async function makePOSTRequest(guild: string, user: string, channel: string, xp: number, pfp: string, name: string, nickname: string) {
+	await fetch(`http://localhost:18103/post/${guild}/${user}`, {
 		headers: {
 			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
 		},
 		method: 'POST',
 		body: JSON.stringify({ xp, pfp, name, nickname }),
 	}).then(res => {
 		return res.json()
 	}).then(data => {
-		if (data.sendUpdateEvent) handleLevelChange(guild, user, data.level)
+		if (data.sendUpdateEvent) handleLevelChange(guild, user, channel, data.level)
 	})
 }
 
@@ -42,9 +43,10 @@ export async function updateGuildInfo(guild: string, name: string, icon: string,
 	await fetch(`http://localhost:18103/post/${guild}`, {
 		headers: {
 			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
 		},
 		method: 'POST',
-		body: JSON.stringify({ name, icon, members, auth: process.env.AUTH }),
+		body: JSON.stringify({ name, icon, members }),
 	}).then(res => {
 		return res.json()
 	}).then(data => {
@@ -52,16 +54,49 @@ export async function updateGuildInfo(guild: string, name: string, icon: string,
 	})
 }
 
+export async function removeGuild(guild: string) {
+	await fetch(`http://localhost:18103/post/${guild}/remove`, {
+		headers: {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		method: 'POST',
+	})
+}
+
+export async function setXP(guild: string, user: string, xp: number) {
+	const response = await fetch(`http://localhost:18103/admin/set/${guild}/xp`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({ extraData: { user, value: xp } }),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+
+export async function setLevel(guild: string, user: string, level: number) {
+	const response = await fetch(`http://localhost:18103/admin/set/${guild}/level`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({ extraData: { user, value: level } }),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+
 //#region Roles
 export async function getRoles(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/roles/${guild}/get`, {
 		headers: {
 			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
 		},
+		body: JSON.stringify({}),
 		referrerPolicy: 'strict-origin-when-cross-origin',
-		body: JSON.stringify({
-			auth: process.env.AUTH,
-		}),
 		method: 'POST',
 	});
 
@@ -74,9 +109,9 @@ export async function removeRole(guild: string, role: string): Promise<boolean> 
 	const response = await fetch(`http://localhost:18103/admin/roles/${guild}/remove`, {
 		"headers": {
 			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
 		},
 		"body": JSON.stringify({
-			auth: process.env.AUTH,
 			extraData: {
 				role: role,
 			}
@@ -90,9 +125,9 @@ export async function addRole(guild: string, role: string, level: number): Promi
 	const response = await fetch(`http://localhost:18103/admin/roles/${guild}/add`, {
 		"headers": {
 			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
 		},
 		"body": JSON.stringify({
-			auth: process.env.AUTH,
 			extraData: {
 				role: role,
 				level: level
@@ -109,26 +144,86 @@ export async function addRole(guild: string, role: string, level: number): Promi
 //#endregion
 
 //#region Updates
-export async function checkIfGuildHasUpdatesEnabled(guild: string) {
+export async function getUpdatesChannel(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/get`, {
-		"headers": { 'Content-Type': 'application/json' },
-		"body": JSON.stringify({ auth: process.env.AUTH }),
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string
+		},
+		"body": JSON.stringify({}),
+		"method": "POST"
+	});
+	return response.status === 200 ? response.json() : {};
+}
+export async function setUpdatesChannel(guild: string, channelId: string | null) {
+	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/set`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({ extraData: { channelId } }),
 		"method": "POST"
 	});
 	return response.status === 200;
 }
-export async function enableUpdates(guild: string, channelId: string) {
+export async function enableUpdates(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/enable`, {
-		"headers": { 'Content-Type': 'application/json' },
-		"body": JSON.stringify({ auth: process.env.AUTH, extraData: { channelId } }),
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({}),
 		"method": "POST"
 	});
 	return response.status === 200;
 }
 export async function disableUpdates(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/updates/${guild}/disable`, {
-		"headers": { 'Content-Type': 'application/json' },
-		"body": JSON.stringify({ auth: process.env.AUTH }),
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({}),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+//#endregion
+
+//#region Cooldowns
+export async function getCooldown(guild: string) {
+	const response = await fetch(`http://localhost:18103/admin/cooldown/${guild}/get`, {
+		"headers": { 
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({}),
+		"method": "POST"
+	});
+	return response.json();
+}
+
+export async function setCooldown(guild: string, cooldown: number) {
+	const response = await fetch(`http://localhost:18103/admin/cooldown/${guild}/set`, {
+		"headers": {
+			'Content-Type': 'application/json', 
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({ extraData: { cooldown } }),
+		"method": "POST"
+	});
+	return response.status === 200;
+}
+//#endregion
+
+//#region Sync
+export async function syncFromBot(guild: string, bot: string) {
+	const response = await fetch(`http://localhost:18103/admin/sync/${guild}/${bot}`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"body": JSON.stringify({}),
 		"method": "POST"
 	});
 	return response.status === 200;

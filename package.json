@@ -1,10 +1,13 @@
 {
 	"name": "xpbot",
 	"type": "module",
-	"version": "0.0.8",
+	"version": "0.1.0",
 	"scripts": {
+		"dev:api": "bun --watch api/index.ts --dev",
+		"dev:bot": "bun --watch bot/index.ts --dev",
 		"api": "bun api/index.ts",
-		"bot": "bun bot/index.ts"
+		"bot": "bun bot/index.ts",
+		"lint": "eslint . --config eslint.config.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.7.0",
@@ -18,6 +21,8 @@
 		"typescript": "^5.0.0"
 	},
 	"dependencies": {
+		"canvacord": "^6.0.2",
+		"colorthief": "^2.4.0",
 		"cors": "^2.8.5",
 		"discord.js": "^14.15.3",
 		"ejs": "^3.1.10",

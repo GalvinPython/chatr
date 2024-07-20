@@ -1,449 +1,457 @@
-import express from 'express';
-import cors from 'cors';
-import mysql from 'mysql2';
-import path from 'path';
+import express, { type NextFunction, type Request, type Response } from "express";
+import cors from "cors";
+import path from "path";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild } from "./db";
 
 const app = express();
 const PORT = 18103;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, "public")));
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
-// Create a MySQL connection pool
-const pool = mysql.createPool({
-	host: process.env.MYSQL_ADDRESS as string,
-	port: parseInt(process.env.MYSQL_PORT as string),
-	user: process.env.MYSQL_USER as string,
-	password: process.env.MYSQL_PASSWORD as string,
-	database: process.env.MYSQL_DATABASE as string,
-});
+console.log("Initializing tables...");
+await initTables();
+console.log("Tables initialized");
 
-// Create the basic information tables
-async function initInfoTables() {
-	const createUpdatesTable = `
-		CREATE TABLE IF NOT EXISTS info_updates (
-			guild_id VARCHAR(255) NOT NULL,
-			enabled BOOLEAN DEFAULT FALSE,
-			channel_id VARCHAR(255),
-			PRIMARY KEY (guild_id)
-		)
-	`;
-	const createRolesTable = `
-		CREATE TABLE IF NOT EXISTS info_roles (
-			guild_id VARCHAR(255) NOT NULL,
-			role_id VARCHAR(255) NOT NULL,
-			level INT NOT NULL,
-			PRIMARY KEY (role_id)
-		)
-	`;
-	const createExcludesTable = `
-		CREATE TABLE IF NOT EXISTS info_excludes (
-			channel_id VARCHAR(255) NOT NULL,
-			guild_id VARCHAR(255) NOT NULL,
-			PRIMARY KEY (channel_id)
-		)
-	`;
-	const createGuildsTable = `
-		CREATE TABLE IF NOT EXISTS info_guilds (
-			guild_id VARCHAR(255) NOT NULL,
-			guild_name VARCHAR(255),
-			guild_icon VARCHAR(255),
-			guild_members INT,
-			PRIMARY KEY (guild_id)
-		)
-	`;
-
-	pool.query(createUpdatesTable, (err, results) => {
-		if (err) {
-			console.error('Error creating updates table:', err);
-		} else {
-			console.log('Updates table created:', results);
-		}
-	});
-
-	pool.query(createRolesTable, (err, results) => {
-		if (err) {
-			console.error('Error creating roles table:', err);
-		} else {
-			console.log('Roles table created:', results);
-		}
-	});
-
-	pool.query(createExcludesTable, (err, results) => {
-		if (err) {
-			console.error('Error creating excludes table:', err);
-		} else {
-			console.log('Excludes table created:', results);
-		}
-	});
-
-	pool.query(createGuildsTable, (err, results) => {
-		if (err) {
-			console.error('Error creating guilds info table:', err);
-		} else {
-			console.log('Guilds info table created:', results);
-		}
-	});
-}
-console.log('Initializing info tables...');
-await initInfoTables();
-console.log('Info tables initialized');
-
-// Ensure the table for a specific guild exists
-async function ensureGuildTableExists(guild, callback) {
-	const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS \`${guild}\` (
-            user_id VARCHAR(255) NOT NULL,
-            xp INT DEFAULT 0,
-			user_pfp TINYTEXT,
-			user_name TINYTEXT,
-			user_nickname TINYTEXT,
-			user_level INT DEFAULT 0,
-			user_xp_needed_next_level INT,
-			user_progress_next_level DECIMAL(6, 2),
-            PRIMARY KEY (user_id)
-        )
-    `;
-	pool.query(createTableQuery, (err, results) => {
-		if (err) {
-			console.error(`Error creating table for guild ${guild}:`, err);
-			callback(err);
-		}
-		else {
-			console.log(`Table for guild ${guild} ensured:`, results);
-			callback(null);
-		}
-	});
-}
-
-async function updateGuildInfo(guild, name, icon, members, callback) {
-	const insertOrUpdateQuery = `
-		INSERT INTO info_guilds (guild_id, guild_name, guild_icon, guild_members)
-		VALUES (?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE
-		guild_name = VALUES(guild_name),
-		guild_icon = VALUES(guild_icon),
-		guild_members = VALUES(guild_members)
-	`;
-	pool.query(insertOrUpdateQuery, [guild, name, icon, members], (err, results) => {
-		if (err) {
-			console.error('Error updating guild info:', err);
-			callback(err, null);
-		}
-		else {
-			console.log('Guild info updated:', results);
-			callback(null, results);
-		}
-	});
-}
-
-app.post('/post/:guild/', async (req, res) => {
-	const { guild } = req.params;
-	const { name, icon, members, auth } = req.body;
-
-	if (auth !== process.env.AUTH) {
-		return res.status(403).json({ message: 'Access denied. Auth token is missing' });
+function authMiddleware(req: Request, res: Response, next: NextFunction) {
+	if (!req.headers.authorization || req.headers.authorization !== process.env.AUTH) {
+		return res
+			.status(403)
+			.json({ message: "Access denied" });
 	}
+	next();
+}
 
-	updateGuildInfo(guild, name, icon, members, (err, results) => {
-		if (err) {
-			res.status(500).json({ message: 'Internal server error' });
-		} else {
-			res.status(200).json(results);
-		}
+app.post("/post/:guild", authMiddleware, async (req, res) => {
+	const { guild } = req.params;
+	const { name, icon, members } = req.body;
+
+	const [err, results] = await updateGuild({
+		id: guild,
+		name,
+		icon,
+		members,
 	});
+
+	if (err) {
+		res.status(500).json({ message: "Internal server error" });
+	} else {
+		res.status(200).json(results);
+	}
 });
 
-app.post('/post/:guild/:user/:auth', (req, res) => {
-	const { guild, user, auth } = req.params;
+app.post('/post/:guild/remove', authMiddleware, async (req, res) => {
+	const { guild } = req.params;
+	const [err, results] = await removeGuild(guild);
+
+	if (err) {
+		res.status(500).json({ message: "Internal server error" });
+	} else {
+		res.status(200).json(results);
+	}
+})
+
+app.post("/post/:guild/:user", authMiddleware, async (req, res) => {
+	const { guild, user } = req.params;
 	const { name, pfp, xp, nickname } = req.body;
 	console.log(req.body);
 	const xpValue = parseInt(xp);
 
-	if (auth !== process.env.AUTH) {
-		return res.status(403).json({ message: 'Access denied. Auth token is missing' });
+	const [err, result] = await getUser(user, guild);
+
+	if (err) {
+		console.error("Error fetching XP:", err);
+		return res.status(500).json({ message: "Internal server error" });
 	}
 
-	ensureGuildTableExists(guild, (err) => {
-		if (err) {
-			return res.status(500).json({ message: 'Internal server error' });
-		}
 
-		const getXpQuery = `SELECT xp, user_level FROM \`${guild}\` WHERE user_id = ?`;
+	const currentXp = result?.xp ?? 0;
+	const currentLevelSaved = result?.level ?? 0;
+	const newXp = currentXp + xpValue;
 
-		pool.query(getXpQuery, [user], (err, results) => {
+	const currentLevel = Math.floor(Math.sqrt(newXp / 100));
+	const nextLevel = currentLevel + 1;
+	const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+	const xpNeededForNextLevel = nextLevelXp - newXp;
+	const currentLevelXp = Math.pow(currentLevel, 2) * 100;
+	const progressToNextLevel =
+		((newXp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+
+	const updateQuery = `
+    INSERT INTO users
+        (id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        xp = VALUES(xp),
+        pfp = VALUES(pfp),
+        name = VALUES(name),
+        nickname = VALUES(nickname),
+        level = VALUES(level),
+        xp_needed_next_level = VALUES(xp_needed_next_level),
+        progress_next_level = VALUES(progress_next_level)
+	`;
+
+	pool.query(
+		updateQuery,
+		[
+			user,
+			guild,
+			newXp,
+			pfp,
+			name,
+			nickname,
+			currentLevel,
+			xpNeededForNextLevel,
+			progressToNextLevel.toFixed(2),
+		],
+		(err) => {
 			if (err) {
-				console.error('Error fetching XP:', err);
-				return res.status(500).json({ message: 'Internal server error' });
+				console.error("Error updating XP:", err);
+				return res
+					.status(500)
+					.json({ success: false, message: "Internal server error" });
+			} else {
+				res
+					.status(200)
+					.json({
+						success: true,
+						sendUpdateEvent: currentLevelSaved !== currentLevel,
+						level: currentLevel,
+					});
 			}
-
-			const currentXp = results.length ? results[0].xp : 0;
-			const currentLevelSaved = results.length ? results[0].user_level : 0;
-			const newXp = currentXp + xpValue;
-
-			const currentLevel = Math.floor(Math.sqrt(newXp / 100));
-			const nextLevel = currentLevel + 1;
-			const nextLevelXp = Math.pow(nextLevel, 2) * 100;
-			const xpNeededForNextLevel = nextLevelXp - newXp;
-			const currentLevelXp = Math.pow(currentLevel, 2) * 100;
-			const progressToNextLevel = ((newXp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
-
-			const updateQuery = `
-                INSERT INTO \`${guild}\` (user_id, xp, user_pfp, user_name, user_nickname, user_level, user_xp_needed_next_level, user_progress_next_level)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    xp = VALUES(xp),
-                    user_pfp = VALUES(user_pfp),
-                    user_name = VALUES(user_name),
-                    user_nickname = VALUES(user_nickname),
-                    user_level = VALUES(user_level),
-                    user_xp_needed_next_level = VALUES(user_xp_needed_next_level),
-                    user_progress_next_level = VALUES(user_progress_next_level)
-            `;
-
-			pool.query(updateQuery, [user, newXp, pfp, name, nickname, currentLevel, xpNeededForNextLevel, progressToNextLevel.toFixed(2)], (err, results) => {
-				if (err) {
-					console.error('Error updating XP:', err);
-					return res.status(500).json({ success: false, message: 'Internal server error' });
-				} else {
-					res.status(200).json({ success: true, sendUpdateEvent: currentLevelSaved !== currentLevel, level: currentLevel});
-				}
-			});
-		});
-	});
+		},
+	);
 });
 
-app.get('/get/:guild/:user', (req, res) => {
+app.get("/get/:guild/:user", async (req, res) => {
 	const { guild, user } = req.params;
 
-	const selectQuery = `
-        SELECT * FROM \`${guild}\` WHERE user_id = ?
-    `;
-	pool.query(selectQuery, [user], (err, results) => {
-		if (err) {
-			console.error('Error fetching XP:', err);
-			res.status(500).json({ message: 'Internal server error' });
-		}
-		else if (results.length > 0) {
-			res.status(200).json(results[0]);
-		}
-		else {
-			res.status(404).json({ message: 'User not found' });
-		}
-	});
+	const [err, result] = await getUser(user, guild);
+
+	if (err) {
+		console.error("Error fetching user:", err);
+		res.status(500).json({ message: "Internal server error" });
+	} else if (result) {
+		res.status(200).json(result);
+	} else {
+		res.status(404).json({ message: "User not found" });
+	}
 });
 
-app.get('/get/:guild', async (req, res) => {
+app.get("/get/:guild", async (req, res) => {
 	const { guild } = req.params;
-	const returnData = { "guild": {}, "leaderboard": [] };
 
-	const selectQuery = `
-		SELECT * FROM \`${guild}\` ORDER BY xp DESC;
-	`;
-	const selectQuery2 = `
-		SELECT * FROM info_guilds WHERE guild_id = ${guild};
-	`;
+	const [guildErr, guildData] = await getGuild(guild);
+	const [usersErr, usersData] = await getUsers(guild);
 
-	try {
-		const results1 = await new Promise((resolve, reject) => {
-			pool.query(selectQuery, (err, results) => {
-				if (err) {
-					console.error('Error fetching XP:', err);
-					reject(err);
-				} else {
-					resolve(results);
-				}
-			});
+	if (guildErr) {
+		console.error("Error fetching guild:", guildErr);
+		res.status(500).json({ message: "Internal server error" });
+	} else if (usersErr) {
+		console.error("Error fetching users:", usersErr);
+		res.status(500).json({ message: "Internal server error" });
+	} else if (!guildData) {
+		res.status(404).json({ message: "Guild not found" });
+	} else {
+		res.status(200).json({
+			guild: guildData,
+			leaderboard: usersData,
 		});
-
-		const results2 = await new Promise((resolve, reject) => {
-			pool.query(selectQuery2, (err, results) => {
-				if (err) {
-					console.error('Error fetching XP:', err);
-					reject(err);
-				} else {
-					resolve(results);
-				}
-			});
-		});
-
-		returnData.leaderboard = results1;
-		returnData.guild = results2[0];
-
-		return res.status(200).json(returnData);
-	} catch (error) {
-		console.error('Error fetching XP:', error);
-		return res.status(500).json({ message: 'Internal server error' });
 	}
 });
 
-app.post('/admin/:action/:guild/:target', async (req, res) => {
+app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 	const { guild, action, target } = req.params;
-	const { auth, extraData } = req.body;
-
-	if (auth !== process.env.AUTH) {
-		return res.status(403).json({ message: 'Access denied. Auth token is missing' });
-	}
-
-	let apiSuccess;
+	const { extraData } = req.body;
 
 	switch (action) {
-		case 'include':
+		case "include":
+			// TODO: implement this
 			// target: channel id
 			// run function to include target to guild
 			break;
-		case 'exclude':
+		case "exclude":
+			// TODO: implement this
 			// target: channel id
 			// run function to exclude target from guild
 			break;
-		case 'updates':
-			if (target !== 'enable' && target !== 'disable' && target !== 'get') {
-				return res.status(400).json({ message: 'Illegal request' });
+		case "updates":
+			if (target !== "enable" && target !== "disable" && target !== "set" && target !== "get") {
+				return res.status(400).json({ message: "Illegal request" });
 			}
 
 			switch (target) {
-				case 'enable':
-					if (!extraData || !extraData.channelId) {
-						return res.status(400).json({ message: 'Illegal request' });
-					}
+				case "enable":
 					try {
-						const data = await adminUpdatesAdd(guild, extraData.channelId);
-						return res.status(200).json(data);
-					} catch (error) {
-						return res.status(500).json({ message: 'Internal server error' });
+						const [err, success] = await enableUpdates(guild);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
 					}
-				case 'disable':
+				case "disable":
 					try {
-						const data = await adminUpdatesRemove(guild);
-						return res.status(200).json(data);
-					} catch (error) {
-						return res.status(500).json({ message: 'Internal server error' });
+						const [err, success] = await disableUpdates(guild);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				case 'set':
+					if (!extraData || typeof extraData.channelId === "undefined") {
+						return res.status(400).json({ message: "Illegal request" });
+					}
+
+					try {
+						const [err, success] = await setUpdatesChannel(guild, extraData.channelId);
+						if (err) {
+							return res.status(500).json({ message: 'Internal server error', err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: 'Internal server error', err });
 					}
 				default:
 					try {
-						const data = await adminUpdatesGet(guild);
-						return res.status(200).json(data);
+						const [err, data] = await getGuild(guild);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						}
+						return res.status(200).json({
+							enabled: ((data?.updates_enabled ?? 1) === 1),
+							channel: data?.updates_channel_id ?? null,
+						});
 					} catch (error) {
-						return res.status(500).json({ message: 'Internal server error' });
+						return res.status(500).json({ message: "Internal server error" });
 					}
 			}
-		case 'roles':
-			if (target !== 'add' && target !== 'remove' && target !== 'get') {
-				return res.status(400).json({ message: 'Illegal request' });
+		case "roles":
+			if (target !== "add" && target !== "remove" && target !== "get") {
+				return res.status(400).json({ message: "Illegal request" });
 			}
 
-			if ((target === 'add' || target === 'remove') && !extraData) {
-				return res.status(400).json({ message: 'Illegal request' });
+			if ((target === "add" || target === "remove") && !extraData) {
+				return res.status(400).json({ message: "Illegal request" });
 			}
 
 			switch (target) {
-				case 'get':
+				case "get":
 					try {
 						const data = await adminRolesGet(guild);
 						return res.status(200).json(data);
 					} catch (error) {
-						return res.status(500).json({ message: 'Internal server error' });
+						return res.status(500).json({ message: "Internal server error" });
 					}
-				case 'remove':
+				case "remove":
 					try {
 						const data = await adminRolesRemove(guild, extraData.role);
 						return res.status(200).json(data);
 					} catch (error) {
-						return res.status(500).json({ message: 'Internal server error' });
+						return res.status(500).json({ message: "Internal server error" });
 					}
-				case 'add':
+				case "add":
 					try {
-						const data = await adminRolesAdd(guild, extraData.role, extraData.level);
+						const data = await adminRolesAdd(
+							guild,
+							extraData.role,
+							extraData.level,
+						);
 						return res.status(200).json(data);
 					} catch (error) {
-						return res.status(500).json({ message: 'Internal server error' });
+						return res.status(500).json({ message: "Internal server error" });
 					}
 				default:
-					return res.status(500).json({ message: 'Internal server error' });
+					return res.status(500).json({ message: "Internal server error" });
 			}
+		case "cooldown":
+			if (target !== "set" && target !== "get") {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			if (target === "set" && !extraData) {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			switch (target) {
+				case "get":
+					try {
+						const [err, data] = await getGuild(guild);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error" });
+						}
+						return res.status(200).json({ cooldown: data?.cooldown ?? 30_000 });
+					} catch (error) {
+						return res.status(500).json({ message: "Internal server error" });
+					}
+				case "set":
+					try {
+						const data = await setCooldown(guild, extraData.cooldown);
+						return res.status(200).json(data);
+					} catch (error) {
+						return res.status(500).json({ message: "Internal server error" });
+					}
+				default:
+					return res.status(500).json({ message: "Internal server error" });
+			}
+		case "set": {
+			if (target !== "xp" && target !== "level") {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			if (!extraData || !extraData.user || !extraData.value) {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			switch (target) {
+				case "xp":
+					try {
+						const [err, success] = await setXP(guild, extraData.user, extraData.value);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				case "level":
+					try {
+						const [err, success] = await setLevel(guild, extraData.user, extraData.value);
+						if (err) {
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				default:
+					return res.status(500).json({ message: "Internal server error" });
+			}
+		}
+		case "sync": {
+			if (target !== "polaris" && target !== "mee6" && target !== "lurkr") {
+				return res.status(400).json({ message: "Illegal request" });
+			}
+
+			switch (target) {
+				case "polaris": {
+					try {
+						const [err, success] = await syncFromPolaris(guild);
+						if (err) {
+							if (err instanceof Error && err.message === "Server not found in Polaris") {
+								return res.status(404).json({ message: "Server not found in Polaris" });
+							}
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				}
+				case "mee6": {
+					try {
+						const [err, success] = await syncFromMee6(guild);
+						if (err) {
+							if (err instanceof Error && err.message === "Server not found in MEE6") {
+								return res.status(404).json({ message: "Server not found in MEE6" });
+							}
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				}
+				case "lurkr": {
+					try {
+						const [err, success] = await syncFromLurkr(guild);
+						if (err) {
+							if (err instanceof Error && err.message === "Server not found in Lurkr") {
+								return res.status(404).json({ message: "Server not found in Lurkr" });
+							}
+							return res.status(500).json({ message: "Internal server error", err });
+						} else {
+							return res.status(200).json(success);
+						}
+					} catch (err) {
+						return res.status(500).json({ message: "Internal server error", err });
+					}
+				}
+				default:
+					return res.status(500).json({ message: "Internal server error" });
+			}
+		}
 		default:
-			return res.status(400).json({ message: 'Illegal request' });
+			return res.status(400).json({ message: "Illegal request" });
 	}
 });
 
-app.get('/leaderboard/:guild', async (req, res) => {
+app.get("/leaderboard/:guild", async (req, res) => {
 	const { guild } = req.params;
-	const response = await fetch(`http://localhost:18103/get/${guild}/`);
-	if (!response.ok) {
-		return res.status(404).json({ message: 'No guild was found with this ID' });
+	const [guildErr, guildData] = await getGuild(guild);
+	const [usersErr, usersData] = await getUsers(guild);
+
+	if (!guildData) {
+		return res.status(404).render("error", { error: { status: 404, message: "The guild does not exist. If Chatr is no longer in this server, the data for this guild has been locked from public access" } });
 	}
-	const data = await response.json();
-	res.render('leaderboard', { guild: data.guild, leaderboard: data.leaderboard });
+
+	if (guildErr) {
+		console.error("Error fetching guild:", guildErr);
+		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch guild info. Or the guild does not exist" } });
+	} else if (usersErr) {
+		console.error("Error fetching users:", usersErr);
+		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch user info" } });
+	}
+
+	res.render("leaderboard", {
+		guild: guildData,
+		leaderboard: usersData,
+	});
 });
 
-async function getBotInfo() {
-	const selectGuildsCountQuery = `
-		SELECT COUNT(*) AS total_guilds FROM info_guilds;
-	`;
-
-	const selectTotalMembersQuery = `
-		SELECT SUM(guild_members) AS total_members FROM info_guilds;
-	`;
-
-	try {
-		const guildsCountResult = await new Promise((resolve, reject) => {
-			pool.query(selectGuildsCountQuery, (err, results) => {
-				if (err) {
-					console.error('Error fetching guilds count:', err);
-					reject(err);
-				} else {
-					resolve(results[0].total_guilds);
-				}
-			});
-		});
-
-		const totalMembersResult = await new Promise((resolve, reject) => {
-			pool.query(selectTotalMembersQuery, (err, results) => {
-				if (err) {
-					console.error('Error fetching total members:', err);
-					reject(err);
-				} else {
-					resolve(results[0].total_members);
-				}
-			});
-		});
-
-		const botInfo = {
-			total_guilds: guildsCountResult,
-			total_members: totalMembersResult,
-		};
-
-		return botInfo
-	} catch (error) {
-		console.error('Error fetching bot info:', error);
-		return null
+app.get("/", async (_req, res) => {
+	const [err, botInfo] = await getBotInfo();
+	if (err) {
+		console.error("Error fetching bot info:", err);
+		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch bot info" } });
 	}
-}
-
-app.get('/', async (req, res) => {
-	const botInfo = await getBotInfo();
-	res.render('index', { botInfo: botInfo });
+	res.render("index", { botInfo });
 });
 
-app.get('/invite', (req, res) => {
-	res.status(308).redirect('https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=1099780115520&integration_type=0&scope=bot+applications.commands')
-})
+app.get("/invite", (_req, res) => res.status(308).redirect("https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=1099780115520&integration_type=0&scope=bot+applications.commands"));
+
+app.get('/support', (_req, res) => res.status(308).redirect('https://discord.gg/fpJVTkVngm'));
+
+app.use((_req, res) => {
+	res.status(404).render("error", { error: { status: 404, message: "Page doesn't exist" } });
+});
 
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);
 });
 
+// TODO: actually implement this in a real way
 //#region Admin: Roles
 async function adminRolesGet(guild: string) {
-	const selectRolesQuery = `SELECT role_id, level FROM info_roles WHERE guild_id = ?`;
+	const selectRolesQuery = `SELECT id, level FROM roles WHERE guild_id = ?`;
 
 	return new Promise((resolve, reject) => {
 		pool.query(selectRolesQuery, [guild], (err, results) => {
 			if (err) {
-				console.error('Error fetching roles:', err);
+				console.error("Error fetching roles:", err);
 				reject(err);
 			} else {
 				resolve(results);
@@ -454,14 +462,14 @@ async function adminRolesGet(guild: string) {
 
 async function adminRolesRemove(guild: string, role: string) {
 	const deleteRoleQuery = `
-		DELETE FROM info_roles
-		WHERE guild_id = ? AND role_id = ?
+		DELETE FROM roles
+		WHERE id = ? AND guild_id = ?
 	`;
 
 	return new Promise((resolve, reject) => {
-		pool.query(deleteRoleQuery, [guild, role], (err, results) => {
+		pool.query(deleteRoleQuery, [role, guild], (err, results) => {
 			if (err) {
-				console.error('Error removing role:', err);
+				console.error("Error removing role:", err);
 				reject(err);
 			} else {
 				resolve(results);
@@ -472,14 +480,14 @@ async function adminRolesRemove(guild: string, role: string) {
 
 async function adminRolesAdd(guild: string, role: string, level: number) {
 	const insertRoleQuery = `
-		INSERT INTO info_roles (guild_id, role_id, level)
+		INSERT INTO roles (id, guild_id, level)
 		VALUES (?, ?, ?)
 	`;
 
 	return new Promise((resolve, reject) => {
-		pool.query(insertRoleQuery, [guild, role, level], (err, results) => {
+		pool.query(insertRoleQuery, [role, guild, level], (err, results) => {
 			if (err) {
-				console.error('Error adding role:', err);
+				console.error("Error adding role:", err);
 				reject(err);
 			} else {
 				resolve(results);
@@ -489,59 +497,193 @@ async function adminRolesAdd(guild: string, role: string, level: number) {
 }
 //#endregion
 
-//#region Admin: Updates
-async function adminUpdatesGet(guildId: string) {
-	const selectUpdatesQuery = `SELECT * FROM info_updates WHERE guild_id = ?`;
+//#region Syncing
+async function syncFromPolaris(guild: string) {
+	const res = await fetch(`https://gdcolon.com/polaris/api/leaderboard/${guild}`);
+	const data = await res.json();
+	if (data.apiError && data.code === "invalidServer") {
+		return [new Error("Server not found in Polaris"), false];
+	}
+	const users = data.leaderboard;
+	for (let i = 1; i < data.pageInfo.pageCount; i++) {
+		const res = await fetch(`https://gdcolon.com/polaris/api/leaderboard/${guild}?page=${i + 1}`);
+		const data = await res.json();
+		users.push(...data.leaderboard);
+	}
 
-	return new Promise((resolve, reject) => {
-		pool.query(selectUpdatesQuery, [guildId], (err, results) => {
-			if (err) {
-				console.error('Error fetching updates:', err);
-				reject(err);
-			} else {
-				resolve(results);
-			}
-		});
-	});
+	if (users.length === 0) {
+		return [new Error("No users found"), false];
+	}
+
+	try {
+		for (const user of users) {
+			const xpValue = user.xp;
+			const level = Math.floor(Math.sqrt(xpValue / 100));
+			const nextLevel = level + 1;
+			const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+			const xpNeededForNextLevel = nextLevelXp - xpValue;
+			const currentLevelXp = Math.pow(level, 2) * 100;
+			const progressToNextLevel =
+				((xpValue - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+
+			await new Promise((resolve, reject) => {
+				pool.query(
+					`INSERT INTO users (id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					[
+						user.id,
+						guild,
+						xpValue,
+						user.avatar,
+						user.username,
+						user.nickname ?? user.displayName,
+						level,
+						xpNeededForNextLevel,
+						progressToNextLevel.toFixed(2),
+					],
+					(err) => {
+						if (err) {
+							console.error("Error syncing from Polaris:", err);
+							reject(err);
+						} else {
+							resolve(null);
+						}
+					},
+				);
+			});
+		}
+		return [null, true]
+	} catch (err) {
+		return [err, false];
+	}
+
 }
 
-async function adminUpdatesAdd(guildId: string, channelId: string) {
-	const insertUpdatesQuery = `
-		INSERT INTO info_updates (guild_id, enabled, channel_id)
-		VALUES (?, TRUE, ?)
-		ON DUPLICATE KEY UPDATE
-		enabled = TRUE,
-		channel_id = ?
-	`;
+async function syncFromMee6(guild: string) {
+	const res = await fetch(`https://mee6.xyz/api/plugins/levels/leaderboard/${guild}?limit=1000&page=0`);
+	const data = await res.json();
+	if (data.status_code === 404) {
+		return [new Error("Server not found in MEE6"), false];
+	}
+	const users = data.players;
+	let pageNumber = 1;
+	// this is needed because MEE6 doesn't give us the total amount of pages
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
+		const res = await fetch(`https://mee6.xyz/api/plugins/levels/leaderboard/${guild}?limit=1000&page=${pageNumber}`);
+		const data = await res.json();
+		users.push(...data.players);
+		if (data.players.length < 1000) break;
+		pageNumber += 1;
+	}
 
-	return new Promise((resolve, reject) => {
-		pool.query(insertUpdatesQuery, [guildId, channelId, channelId], (err, results) => {
-			if (err) {
-				console.error('Error enabling updates:', err);
-				reject(err);
-			} else {
-				resolve(results);
-			}
-		});
-	});
+	if (users.length === 0) {
+		return [new Error("No users found"), false];
+	}
+
+	try {
+		for (const user of users) {
+			const xpValue = user.xp;
+			const level = Math.floor(Math.sqrt(xpValue / 100));
+			const nextLevel = level + 1;
+			const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+			const xpNeededForNextLevel = nextLevelXp - xpValue;
+			const currentLevelXp = Math.pow(level, 2) * 100;
+			const progressToNextLevel =
+				((xpValue - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+
+			await new Promise((resolve, reject) => {
+				pool.query(
+					`INSERT INTO users (id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					[
+						user.id,
+						guild,
+						xpValue,
+						`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp`,
+						user.username,
+						user.username,
+						level,
+						xpNeededForNextLevel,
+						progressToNextLevel.toFixed(2),
+					],
+					(err) => {
+						if (err) {
+							console.error("Error syncing from MEE6:", err);
+							reject(err);
+						} else {
+							resolve(null);
+						}
+					},
+				);
+			});
+		}
+		return [null, true]
+	} catch (err) {
+		return [err, false];
+	}
 }
 
-async function adminUpdatesRemove(guildId: string) {
-	const deleteUpdatesQuery = `
-		DELETE FROM info_updates
-		WHERE guild_id = ?
-	`;
+async function syncFromLurkr(guild: string) {
+	const res = await fetch(`https://api.lurkr.gg/v2/levels/${guild}?page=1`);
+	const data = await res.json();
+	if (data.message === "Guild no found") {
+		return [new Error("Server not found in Lurkr"), false];
+	}
+	const users = data.levels;
 
-	return new Promise((resolve, reject) => {
-		pool.query(deleteUpdatesQuery, [guildId], (err, results) => {
-			if (err) {
-				console.error('Error disabling updates:', err);
-				reject(err);
-			} else {
-				resolve(results);
-			}
-		});
-	});
+	if (users.length === 0) {
+		return [new Error("No users found"), false];
+	}
+
+	let pageNumber = 2;
+	// this is needed because Lurkr doesn't give us the total amount of pages
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
+		const res = await fetch(`https://api.lurkr.gg/v2/levels/${guild}?page=${pageNumber}`);
+		const data = await res.json();
+		users.push(...data.levels);
+		if (data.levels.length < 100) break;
+		pageNumber += 1;
+	}
+
+	try {
+		for (const user of users) {
+			const xpValue = user.xp;
+			const level = Math.floor(Math.sqrt(user.xp / 100));
+			const nextLevel = level + 1;
+			const nextLevelXp = Math.pow(nextLevel, 2) * 100;
+			const xpNeededForNextLevel = nextLevelXp - user.xp;
+			const currentLevelXp = Math.pow(level, 2) * 100;
+			const progressToNextLevel =
+				((user.xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
+
+			await new Promise((resolve, reject) => {
+				pool.query(
+					`INSERT INTO users (id, guild_id, xp, pfp, name, nickname, level, xp_needed_next_level, progress_next_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					[
+						user.userId,
+						guild,
+						xpValue,
+						`https://cdn.discordapp.com/avatars/${user.userId}/${user.user.avatar}.webp`,
+						user.user.username,
+						user.user.username,
+						level,
+						xpNeededForNextLevel,
+						progressToNextLevel.toFixed(2),
+					],
+					(err) => {
+						if (err) {
+							console.error("Error syncing from Lurkr:", err);
+							reject(err);
+						} else {
+							resolve(null);
+						}
+					},
+				);
+			});
+		}
+		return [null, true]
+	} catch (err) {
+		return [err, false];
+	}
 }
-
 //#endregion
