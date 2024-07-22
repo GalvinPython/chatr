@@ -1,44 +1,33 @@
 import { Link } from "@nextui-org/link";
-import { Snippet } from "@nextui-org/snippet";
-import { Code } from "@nextui-org/code";
 import { button as buttonStyles } from "@nextui-org/theme";
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
 import { GithubIcon } from "@/components/icons";
 import DefaultLayout from "@/layouts/default";
+import { Search } from "@/components/search";
 
 export default function IndexPage() {
 	return (
 		<DefaultLayout>
-			<section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
+			<section className="flex flex-col items-center justify-center gap-4 py-8">
 				<div className="inline-block max-w-lg text-center justify-center">
-					<h1 className={title()}>Make&nbsp;</h1>
-					<h1 className={title({ color: "violet" })}>beautiful&nbsp;</h1>
-					<br />
-					<h1 className={title()}>
-						websites regardless of your design experience.
-					</h1>
+					<h1 className={title({ color: "violet" })}>Chatr</h1>
+					<h1 className={title()}>.fun</h1>
 					<h4 className={subtitle({ class: "mt-4" })}>
-						Beautiful, fast and modern React UI library.
+						A next generation Discord XP bot.
 					</h4>
+					<p>chatr.fun is not affiliated with Discord</p>
 				</div>
 
 				<div className="flex gap-3">
 					<Link
 						isExternal
-						href={siteConfig.links.docs}
+						href={siteConfig.links.github}
 						className={buttonStyles({
-							color: "primary",
+							color: "default",
 							radius: "full",
 							variant: "shadow",
 						})}
-					>
-						Documentation
-					</Link>
-					<Link
-						isExternal
-						className={buttonStyles({ variant: "bordered", radius: "full" })}
-						href={siteConfig.links.github}
 					>
 						<GithubIcon size={20} />
 						GitHub
@@ -46,11 +35,7 @@ export default function IndexPage() {
 				</div>
 
 				<div className="mt-8">
-					<Snippet hideSymbol hideCopyButton variant="bordered">
-						<span>
-							Get started by editing <Code color="primary">pages/index.tsx</Code>
-						</span>
-					</Snippet>
+					<Search />
 				</div>
 			</section>
 		</DefaultLayout>
