@@ -8,6 +8,8 @@ on:
        - "api/**"
        - "bot/**"
        - "web/**"
+   pull_request:
+     types: [opened, reopened, synchronize]
 
 jobs:
   lint:

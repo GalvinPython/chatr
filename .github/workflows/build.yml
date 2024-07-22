@@ -6,6 +6,8 @@ on:
       - '*'
     paths:
       - "web/**"
+  pull_request:
+    types: [opened, reopened, synchronize]
 
 jobs:
   build-site-test:
