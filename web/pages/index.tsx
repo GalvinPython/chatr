@@ -24,7 +24,7 @@ export default function IndexPage() {
 						isExternal
 						href={siteConfig.links.github}
 						className={buttonStyles({
-							color: "default",
+							color: "secondary",
 							radius: "full",
 							variant: "shadow",
 						})}
