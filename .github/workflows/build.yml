@@ -1,9 +1,11 @@
-name: ESLint Check
+name: Build Site Test
 
 on:
   push:
     branches:
       - '*'
+    paths:
+      - "web/**"
 
 jobs:
   lint:
@@ -21,4 +23,4 @@ jobs:
         run: bun install
 
       - name: Run ESLint
-        run: bun run lint
+        run: bun run build

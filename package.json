@@ -12,7 +12,6 @@
     "dev": "turbo run dev",
     "lint": "eslint . --config eslint.config.mjs"
   },
-  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^9.7.0",
     "@types/bun": "latest",

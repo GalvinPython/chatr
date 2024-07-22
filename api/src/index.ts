@@ -12,6 +12,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+app.disable("x-powered-by");
+
 console.log("Initializing tables...");
 await initTables();
 console.log("Tables initialized");
@@ -567,7 +569,7 @@ async function syncFromMee6(guild: string) {
 	const users = data.players;
 	let pageNumber = 1;
 	// this is needed because MEE6 doesn't give us the total amount of pages
-	// eslint-disable-next-line no-constant-condition
+	 
 	while (true) {
 		const res = await fetch(`https://mee6.xyz/api/plugins/levels/leaderboard/${guild}?limit=1000&page=${pageNumber}`);
 		const data = await res.json();
@@ -636,7 +638,7 @@ async function syncFromLurkr(guild: string) {
 
 	let pageNumber = 2;
 	// this is needed because Lurkr doesn't give us the total amount of pages
-	// eslint-disable-next-line no-constant-condition
+	 
 	while (true) {
 		const res = await fetch(`https://api.lurkr.gg/v2/levels/${guild}?page=${pageNumber}`);
 		const data = await res.json();
