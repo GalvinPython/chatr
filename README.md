@@ -38,7 +38,6 @@ Run the **Bot**
 bun run dev:bot
 ```
 
-
 # Changelog
 ## Beta 0.1
 Thanks to @ToastedDev for his contributions to the bot. Here are some changes that were made
