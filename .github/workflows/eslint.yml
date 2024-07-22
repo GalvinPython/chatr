@@ -1,9 +1,13 @@
 name: ESLint Check
 
 on:
-  push:
-    branches:
-      - '*'
+   push:
+     branches:
+       - '*'
+     paths:
+       - "api/**"
+       - "bot/**"
+       - "web/**"
 
 jobs:
   lint:
