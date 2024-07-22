@@ -286,7 +286,7 @@ const commands: Record<string, Command> = {
 					}, interaction);
 
 					// Add a field for each user with a mention
-					leaderboard.leaderboard.forEach((entry: { id: string; xp: number; }, index: number) => {
+					leaderboard.leaderboard.slice(0, 10).forEach((entry: { id: string; xp: number; }, index: number) => {
 						leaderboardEmbed.addFields([
 							{
 								name: `${index + 1}.`,
