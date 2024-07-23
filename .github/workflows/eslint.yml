@@ -5,9 +5,11 @@ on:
      branches:
        - '*'
      paths:
-       - "api/**"
-       - "bot/**"
-       - "web/**"
+       - "**/*.js"
+       - "**/*.jsx"
+       - "**/*.ts"
+       - "**/*.tsx"
+       - "**/*.mjs"
    pull_request:
      types: [opened, reopened, synchronize]
 

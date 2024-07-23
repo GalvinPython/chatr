@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
-    "lint": "eslint . --config eslint.config.mjs"
+    "lint": "eslint . --config eslint.config.mjs",
+	"build": "cd web && bun run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.7.0",
