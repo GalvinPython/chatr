@@ -5,6 +5,8 @@ import HighchartsReact from 'highcharts-react-official';
 import dynamic from "next/dynamic";
 import Image from 'next/image';
 import "odometer/themes/odometer-theme-default.css";
+import { ChartOptions, ChartPointsFormatted } from '@/types/chart';
+import { PropsUsers } from '@/types/props';
 
 const Odometer = dynamic(import('react-odometerjs'), {
 	ssr: false,
@@ -25,14 +27,14 @@ interface PageState {
 	odometerPointsNeededToNextLevel: number;
 	odometerPointsNeededForNextLevel: number;
 	odometerProgressToNextLevelPercentage: number;
-	chartOptions: any;
+	chartOptions: ChartOptions;
 }
 
-class IndexPage extends Component<{}, PageState> {
+class IndexPage extends Component<object, PageState> {
 
-	interval: NodeJS.Timeout | null = null
+	interval: Timer | null = null
 
-	constructor(props: any | Readonly<{}>) {
+	constructor(props: PropsUsers) {
 		super(props);
 
 		this.state = {
@@ -107,10 +109,10 @@ class IndexPage extends Component<{}, PageState> {
 				},
 				tooltip: {
 					shared: true,
-					formatter(this: any) {
+					formatter(this: ChartPointsFormatted) {
 						if (!this.points || this.points.length === 0) return '';
 
-						const point = this.points[0]; // Assuming you are only dealing with one point
+						const point = this.points[0];
 
 						const index = point.series.xData.indexOf(point.x);
 						const lastY = point.series.yData[index - 1];
@@ -133,7 +135,7 @@ class IndexPage extends Component<{}, PageState> {
 					}
 				},
 				series: [{
-					name: 'Followers',
+					name: 'Total XP',
 					data: [],
 					showInLegend: false,
 					marker: { enabled: false },
@@ -180,7 +182,7 @@ class IndexPage extends Component<{}, PageState> {
 								...prevState.chartOptions,
 								series: [{
 									...prevState.chartOptions.series[0],
-									data: updatedData,
+									data: updatedData as [number, number][],
 								}],
 							},
 							isLoading: false, // Reset isLoading flag
@@ -235,7 +237,7 @@ class IndexPage extends Component<{}, PageState> {
 					<div className="relative w-full p-4 rounded-lg flex flex-col justify-center items-center">
 						{/* <Image
 							src={this.state.discordBannerURL}
-							alt="Twitter Banner"
+							alt="Banner"
 							className="absolute inset-0 w-full h-full object-cover rounded-lg z-0 blur-sm"
 							width={1500}
 							height={500}
@@ -277,9 +279,9 @@ class IndexPage extends Component<{}, PageState> {
 						</div>
 						<div className="bg-gray-800 p-2 rounded-lg flex flex-col justify-center items-center transition-transform transform hover:scale-105">
 							<div className='text-xl sm:text-xl md:text-2xl lg:text-2xl'>
-								<Odometer value={odometerProgressToNextLevelPercentage} />%
+								<Odometer value={odometerProgressToNextLevelPercentage} />
 							</div>
-							<div className="text-gray-400 mt-2 center-text">Progress Percentage</div>
+							<div className="text-gray-400 mt-2 center-text">Progress To Next Level (%)</div>
 						</div>
 						<div className="bg-gray-800 p-2 rounded-lg flex flex-col justify-center items-center transition-transform transform hover:scale-105">
 							<div className='text-xl sm:text-xl md:text-2xl lg:text-2xl'>
@@ -300,8 +302,7 @@ class IndexPage extends Component<{}, PageState> {
 
 export async function getServerSideProps(context: { query: { server: string; user: string; }; }) {
 	const { server, user } = context.query;
-	console.log(server, user);
-
+	
 	try {
 		const response = await fetch(`http://localhost:18103/get/${server}/${user}`);
 

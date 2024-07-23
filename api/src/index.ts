@@ -158,9 +158,11 @@ app.get("/get/:guild", async (req, res) => {
 	} else if (!guildData) {
 		res.status(404).json({ message: "Guild not found" });
 	} else {
+		const totalXp = usersData.reduce((sum, user) => sum + user.xp, 0);
 		res.status(200).json({
 			guild: guildData,
 			leaderboard: usersData,
+			totalXp: totalXp,
 		});
 	}
 });
@@ -569,7 +571,7 @@ async function syncFromMee6(guild: string) {
 	const users = data.players;
 	let pageNumber = 1;
 	// this is needed because MEE6 doesn't give us the total amount of pages
-	 
+	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		const res = await fetch(`https://mee6.xyz/api/plugins/levels/leaderboard/${guild}?limit=1000&page=${pageNumber}`);
 		const data = await res.json();
@@ -638,7 +640,7 @@ async function syncFromLurkr(guild: string) {
 
 	let pageNumber = 2;
 	// this is needed because Lurkr doesn't give us the total amount of pages
-	 
+	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		const res = await fetch(`https://api.lurkr.gg/v2/levels/${guild}?page=${pageNumber}`);
 		const data = await res.json();

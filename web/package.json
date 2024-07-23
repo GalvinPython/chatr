@@ -6,7 +6,7 @@
 		"dev": "next dev --port 56413",
 		"build": "next build",
 		"start": "next start --port 56414",
-		"lint": "next lint"
+		"lint": "next lint --fix"
 	},
 	"dependencies": {
 		"@nextui-org/react": "^2.3.0",

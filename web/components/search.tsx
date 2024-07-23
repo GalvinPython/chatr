@@ -12,7 +12,7 @@ export const Search = () => {
 		}
 	};
 
-	const handleInputChange = (event: any) => {
+	const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setSearchQuery(event.target.value);
 	};
 
