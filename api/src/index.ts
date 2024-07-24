@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import path from "path";
-import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild } from "./db";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild, removeUser } from "./db";
 
 const app = express();
 const PORT = 18103;
@@ -48,6 +48,17 @@ app.post("/post/:guild", authMiddleware, async (req, res) => {
 app.post('/post/:guild/remove', authMiddleware, async (req, res) => {
 	const { guild } = req.params;
 	const [err, results] = await removeGuild(guild);
+
+	if (err) {
+		res.status(500).json({ message: "Internal server error" });
+	} else {
+		res.status(200).json(results);
+	}
+})
+
+app.post('/post/:guild/:user/remove', authMiddleware, async (req, res) => {
+	const { guild, user } = req.params;
+	const [err, results] = await removeUser(user, guild);
 
 	if (err) {
 		res.status(500).json({ message: "Internal server error" });
@@ -126,6 +137,15 @@ app.post("/post/:guild/:user", authMiddleware, async (req, res) => {
 			}
 		},
 	);
+});
+
+app.get('/get/botinfo', async (_req, res) => {
+	const [err, data] = await getBotInfo();
+	if (err) {
+		console.error("Error fetching bot info:", err);
+		return res.status(500).json({ message: "Internal server error" });
+	}
+	return res.status(200).json(data);
 });
 
 app.get("/get/:guild/:user", async (req, res) => {

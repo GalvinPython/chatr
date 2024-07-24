@@ -217,21 +217,6 @@ class IndexPage extends Component<object, PageState> {
 
         return (
             <DefaultLayout>
-                <style jsx>{`
-                    @media (max-width: 810px) {
-                        .grid-cols-2 {
-                            grid-template-columns: 1fr;
-                        }
-                        .center-text {
-                            text-align: center;
-                        }
-                    }
-                    @media (max-width: 1620px) {
-                        .test {
-                            grid-template-columns: 1fr 1fr;
-                        }
-                }
-                `}</style>
                 <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10 max-w-[90%] ml-auto mr-auto">
                     <div className="relative w-full p-4 rounded-lg flex flex-col justify-center items-center">
                         <div className="relative z-10 flex items-center bg-gray-900 p-6 rounded-full bg-opacity-90">
@@ -308,7 +293,7 @@ class IndexPage extends Component<object, PageState> {
                                 const progressPercentage = user.progress_next_level;
 
 								return (
-									<Link href={`/user/${this.state.discordGuildId}/${user.id}`} key={user.id} className="bg-gray-800 p-6 rounded-lg flex flex-col space-y-4 shadow-lg hover:shadow-xl transition-shadow duration-300">
+									<Link href={`/leaderboard/${this.state.discordGuildId}/${user.id}`} key={user.id} className="bg-gray-800 p-6 rounded-lg flex flex-col space-y-4 shadow-lg hover:shadow-xl duration-300 transition-transform hover:scale-105">
 										<div className="flex items-center space-x-4">
 											<div className="flex-shrink-0">
 												<span className="text-white text-2xl font-bold mr-4">{index + 1}.</span>

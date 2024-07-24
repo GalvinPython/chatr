@@ -223,16 +223,6 @@ class IndexPage extends Component<object, PageState> {
 
 		return (
 			<DefaultLayout>
-				<style jsx>{`
-                    @media (max-width: 768px) {
-                        .grid-cols-4 {
-                            grid-template-columns: 1fr;
-                        }
-                        .center-text {
-                            text-align: center;
-                        }
-                    }
-                `}</style>
 				<section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10 max-w-[90%] ml-auto mr-auto">
 					<div className="relative w-full p-4 rounded-lg flex flex-col justify-center items-center">
 						{/* <Image
@@ -251,8 +241,8 @@ class IndexPage extends Component<object, PageState> {
 								height={174}
 							/>
 							<div>
-								<h2 className="text-white text-lg font-semibold  opacity-100" style={{ fontSize: "32px" }}>{this.state.discordDisplayName}</h2>
-								<p className="text-gray-500  opacity-100" style={{ fontSize: "16px" }}>{this.state.discordUsername}</p>
+								<h2 className="text-white text-lg font-semibold opacity-100" style={{ fontSize: "32px" }}>{this.state.discordDisplayName}</h2>
+								<p className="text-gray-500 opacity-100" style={{ fontSize: "16px" }}>{this.state.discordUsername}</p>
 							</div>
 						</div>
 					</div>

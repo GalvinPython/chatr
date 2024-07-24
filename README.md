@@ -39,6 +39,10 @@ bun run dev:bot
 ```
 
 # Changelog
+## Stable 1.0
+* A new, redesigned site using NextJS
+* Users that are no longer in your server will be hidden from the public leaderboard
+
 ## Beta 0.1
 Thanks to @ToastedDev for his contributions to the bot. Here are some changes that were made
 * General formatting fixes (#8)
@@ -52,11 +56,14 @@ Thanks to @ToastedDev for his contributions to the bot. Here are some changes th
 * Fixed wrong data being shown on the leaderboard
 
 # Roadmap
-* Rewritten site using NextJS
+Anything crossed out means that it's been done on the dev branch, but not pushed out to production
+* ~~Rewritten site using NextJS~~
 * Auto-updating cached user information
 * Better privacy controls
-* Live updates
+* ~~Live updates~~
 * Track guilds and users xp
+* Live updates (FIX)
+* Hourly/daily updates etc in a chosen channel
 
 
 Want to add more features? Join our server (linked above) and add a post to `feature-requests`

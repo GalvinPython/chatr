@@ -15,7 +15,7 @@ export interface User {
 
 export async function getUsers(guildId: string): Promise<[QueryError, null] | [null, User[]]> {
 	return new Promise((resolve, reject) => {
-		pool.query("SELECT * FROM users WHERE guild_id = ? ORDER BY xp DESC", [guildId], (err, results) => {
+		pool.query("SELECT * FROM users WHERE guild_id = ? AND user_is_in_guild = ? ORDER BY xp DESC", [guildId, true], (err, results) => {
 			if (err) {
 				reject([err, null]);
 			} else {
@@ -37,6 +37,19 @@ export async function getUser(userId: string, guildId: string): Promise<[QueryEr
 	});
 }
 
+export async function removeUser(userId: string, guildId: string): Promise<[QueryError | null, boolean]> {
+	return new Promise((resolve, reject) => {
+		pool.query("UPDATE users SET user_is_in_guild = ? WHERE id = ? AND guild_id = ?", [false, userId, guildId], (err) => {
+			if (err) {
+				reject([err, false]);
+			} else {
+				resolve([null, true]);
+			}
+		});
+	});
+
+}
+
 export async function setXP(guildId: string, userId: string, xp: number): Promise<[QueryError | null, boolean]> {
 	const newLevel = Math.floor(Math.sqrt(xp / 100));
 	const nextLevel = newLevel + 1;
@@ -47,7 +60,7 @@ export async function setXP(guildId: string, userId: string, xp: number): Promis
 		((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
 
 	return new Promise((resolve, reject) => {
-		pool.query("UPDATE users SET xp = ?, level = ?, xp_needed_next_level = ?, progress_next_level = ? WHERE id = ? AND guild_id = ?", [xp, newLevel, xpNeededForNextLevel.toFixed(2), progressToNextLevel.toFixed(2), userId, guildId], (err) => {
+		pool.query("UPDATE users SET xp = ?, level = ?, xp_needed_next_level = ?, progress_next_level = ?, user_is_in_guild = ? WHERE id = ? AND guild_id = ?", [xp, newLevel, xpNeededForNextLevel.toFixed(2), progressToNextLevel.toFixed(2), true, userId, guildId], (err) => {
 			if (err) {
 				reject([err, false]);
 			} else {

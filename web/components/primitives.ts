@@ -48,6 +48,6 @@ export const subtitle = tv({
 		},
 	},
   defaultVariants:{
-    fullWidth: true
-  }
+    fullWidth: true,
+  },
 });

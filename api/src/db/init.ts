@@ -1,7 +1,7 @@
 import { pool } from ".";
 
 export async function initTables() {
-  const createGuildsTable = `
+	const createGuildsTable = `
 		CREATE TABLE IF NOT EXISTS guilds (
 			id VARCHAR(255) NOT NULL PRIMARY KEY,
 			name VARCHAR(255),
@@ -13,7 +13,7 @@ export async function initTables() {
 			is_in_guild BOOLEAN DEFAULT TRUE
 		)
 	`;
-  const createUsersTable = `
+	const createUsersTable = `
 		CREATE TABLE IF NOT EXISTS users (
 			id VARCHAR(255) NOT NULL,
 			guild_id VARCHAR(255) NOT NULL,
@@ -24,11 +24,11 @@ export async function initTables() {
 			level INT DEFAULT 0,
 			xp_needed_next_level INT,
 			progress_next_level DECIMAL(6, 2),
+			user_is_in_guild BOOLEAN DEFAULT TRUE,
 			PRIMARY KEY (id, guild_id)
 		)
 	`;
-  // FOREIGN KEY (guild_id) REFERENCES guilds(id)
-  const createRolesTable = `
+	const createRolesTable = `
 		CREATE TABLE IF NOT EXISTS roles (
 			id VARCHAR(255) NOT NULL PRIMARY KEY,
 			guild_id VARCHAR(255) NOT NULL,
@@ -36,29 +36,28 @@ export async function initTables() {
 			level INT NOT NULL
 		)
 	`;
-  // FOREIGN KEY (guild_id) REFERENCES guilds(id)
 
-  pool.query(createGuildsTable, (err) => {
-    if (err) {
-      console.error("Error creating guilds table:", err);
-    } else {
-      console.log("Guilds table created");
-    }
-  });
+	pool.query(createGuildsTable, (err) => {
+		if (err) {
+			console.error("Error creating guilds table:", err);
+		} else {
+			console.log("Guilds table created");
+		}
+	});
 
-  pool.query(createUsersTable, (err) => {
-    if (err) {
-      console.error("Error creating users table:", err);
-    } else {
-      console.log("Users table created");
-    }
-  });
+	pool.query(createUsersTable, (err) => {
+		if (err) {
+			console.error("Error creating users table:", err);
+		} else {
+			console.log("Users table created");
+		}
+	});
 
-  pool.query(createRolesTable, (err) => {
-    if (err) {
-      console.error("Error creating roles table:", err);
-    } else {
-      console.log("Roles table created");
-    }
-  });
+	pool.query(createRolesTable, (err) => {
+		if (err) {
+			console.error("Error creating roles table:", err);
+		} else {
+			console.log("Roles table created");
+		}
+	});
 }
