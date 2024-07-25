@@ -73,6 +73,43 @@ app.post("/post/:guild/:user", authMiddleware, async (req, res) => {
 	console.log(req.body);
 	const xpValue = parseInt(xp);
 
+	if (xpValue == 0) {
+		const updateQuery = `
+		INSERT INTO users
+			(id, guild_id, pfp, name, nickname)
+		VALUES (?, ?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			pfp = VALUES(pfp),
+			name = VALUES(name),
+			nickname = VALUES(nickname)
+		`;
+
+		pool.query(
+			updateQuery,
+			[
+				user,
+				guild,
+				pfp,
+				name,
+				nickname,
+			],
+			(err) => {
+				if (err) {
+					console.error("Error updating XP:", err);
+					return res
+						.status(500)
+						.json({ success: false, message: "Internal server error" });
+				} else {
+					res
+						.status(200)
+						.json({
+							success: true
+						});
+				}
+			},
+		);
+	}
+
 	const [err, result] = await getUser(user, guild);
 
 	if (err) {

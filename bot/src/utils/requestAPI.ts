@@ -1,6 +1,7 @@
 import handleLevelChange from "./handleLevelChange";
 
-export async function makePOSTRequest(guild: string, user: string, channel: string, xp: number, pfp: string, name: string, nickname: string) {
+export async function makePOSTRequest(guild: string, user: string, channel: string | null, xp: number | null, pfp: string, name: string, nickname: string) {
+	xp = xp ?? 0
 	await fetch(`http://localhost:18103/post/${guild}/${user}`, {
 		headers: {
 			'Content-Type': 'application/json',
@@ -11,6 +12,7 @@ export async function makePOSTRequest(guild: string, user: string, channel: stri
 	}).then(res => {
 		return res.json()
 	}).then(data => {
+		if (!channel) return
 		if (data.sendUpdateEvent) handleLevelChange(guild, user, channel, data.level)
 	})
 }

@@ -170,7 +170,7 @@ class IndexPage extends Component<object, PageState> {
 
                         return {
                             odometerPoints: points,
-                            odometerMembersBeingTracked: data.guild.members,
+                            odometerMembersBeingTracked: data.leaderboard.length,
                             odometerMembers: data.guild.members,
                             chartOptions: {
                                 ...prevState.chartOptions,
@@ -364,7 +364,7 @@ export async function getServerSideProps(context: { query: { server: string }; }
                     discordGuildName: data.guild.name,
                     odometerPoints: data.totalXp,
                     odometerMembers: data.guild.members,
-                    odometerMembersBeingTracked: data.guild.members,
+                    odometerMembersBeingTracked: data.leaderboard.length,
                     leaderboard: data.leaderboard,
                 }
             };

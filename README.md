@@ -42,6 +42,7 @@ bun run dev:bot
 ## Stable 1.0
 * A new, redesigned site using NextJS
 * Users that are no longer in your server will be hidden from the public leaderboard
+* Implemented `Events.GuildMemberUpdate` event
 
 ## Beta 0.1
 Thanks to @ToastedDev for his contributions to the bot. Here are some changes that were made
@@ -58,7 +59,8 @@ Thanks to @ToastedDev for his contributions to the bot. Here are some changes th
 # Roadmap
 Anything crossed out means that it's been done on the dev branch, but not pushed out to production
 * ~~Rewritten site using NextJS~~
-* Auto-updating cached user information
+* ~~Auto-updating cached user information~~ (GUILD ONLY)
+* Auto-updating cached user information (GLOBAL)
 * Better privacy controls
 * ~~Live updates~~
 * Track guilds and users xp
