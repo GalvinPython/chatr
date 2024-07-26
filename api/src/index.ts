@@ -1,6 +1,5 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
-import path from "path";
 import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild, removeUser } from "./db";
 
 const app = express();
@@ -8,9 +7,6 @@ const PORT = 18103;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
 
 app.disable("x-powered-by");
 
@@ -460,44 +456,12 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 	}
 });
 
-app.get("/leaderboard/:guild", async (req, res) => {
-	const { guild } = req.params;
-	const [guildErr, guildData] = await getGuild(guild);
-	const [usersErr, usersData] = await getUsers(guild);
-
-	if (!guildData) {
-		return res.status(404).render("error", { error: { status: 404, message: "The guild does not exist. If Chatr is no longer in this server, the data for this guild has been locked from public access" } });
-	}
-
-	if (guildErr) {
-		console.error("Error fetching guild:", guildErr);
-		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch guild info. Or the guild does not exist" } });
-	} else if (usersErr) {
-		console.error("Error fetching users:", usersErr);
-		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch user info" } });
-	}
-
-	res.render("leaderboard", {
-		guild: guildData,
-		leaderboard: usersData,
-	});
-});
-
-app.get("/", async (_req, res) => {
-	const [err, botInfo] = await getBotInfo();
-	if (err) {
-		console.error("Error fetching bot info:", err);
-		res.status(500).render("error", { error: { status: 500, message: "Internal server error whilst trying to fetch bot info" } });
-	}
-	res.render("index", { botInfo });
-});
-
 app.get("/invite", (_req, res) => res.status(308).redirect("https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=1099780115520&integration_type=0&scope=bot+applications.commands"));
 
 app.get('/support', (_req, res) => res.status(308).redirect('https://discord.gg/fpJVTkVngm'));
 
 app.use((_req, res) => {
-	res.status(404).render("error", { error: { status: 404, message: "Page doesn't exist" } });
+	res.status(404).json({ message: "Not found" });
 });
 
 app.listen(PORT, () => {
