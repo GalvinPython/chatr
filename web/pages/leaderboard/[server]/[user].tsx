@@ -199,8 +199,8 @@ class IndexPage extends Component<object, PageState> {
 	componentDidMount() {
 		this.fetchData(); // Fetch initial data when component mounts
 
-		// Setup interval to fetch data every 2 seconds after initial data fetching
-		this.interval = setInterval(this.fetchData, 2000);
+		// Make the updating interval 5 seconds to prevent overloading the server and duplicate responses
+        this.interval = setInterval(this.fetchData, 5000);
 	}
 
 	componentWillUnmount() {

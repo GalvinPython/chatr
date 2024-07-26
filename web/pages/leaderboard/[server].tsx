@@ -194,8 +194,8 @@ class IndexPage extends Component<object, PageState> {
     componentDidMount() {
         this.fetchData(); // Fetch initial data when component mounts
 
-        // Setup interval to fetch data every 2 seconds after initial data fetching
-        this.interval = setInterval(this.fetchData, 2000);
+        // Make the updating interval 5 seconds to prevent overloading the server and duplicate responses
+        this.interval = setInterval(this.fetchData, 5000);
     }
 
     componentWillUnmount() {
@@ -240,7 +240,7 @@ class IndexPage extends Component<object, PageState> {
                                 <h2 className="text-white text-lg font-semibold  opacity-100" style={{ fontSize: "32px" }} id='tracking'>Realtime</h2>
                             </div>
                             <div className="bg-gray-900 p-4 rounded-lg flex flex-col justify-center items-center transition-transform transform hover:scale-105 flex-1">
-                                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
+                                <div className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
                                     <Odometer value={odometerPoints} />
                                 </div>
                                 <div className="text-gray-400 mt-2 text-center text-lg">Total XP</div>
@@ -249,13 +249,13 @@ class IndexPage extends Component<object, PageState> {
 
                         <div className="flex flex-col w-full md:w-1/2 space-y-6 flex-1">
                             <div className="bg-gray-900 p-4 rounded-lg flex flex-col justify-center items-center transition-transform transform hover:scale-105 flex-1">
-                                <div className="text-2xl sm:text-2xl md:text-3xl lg:text-3xl">
+                                <div className="text-white text-2xl sm:text-2xl md:text-3xl lg:text-3xl">
                                     <Odometer value={odometerMembers} />
                                 </div>
                                 <div className="text-gray-400 mt-2 text-center text-lg">Members</div>
                             </div>
                             <div className="bg-gray-900 p-4 rounded-lg flex flex-col justify-center items-center transition-transform transform hover:scale-105 flex-1">
-                                <div className="text-2xl sm:text-2xl md:text-3xl lg:text-3xl">
+                                <div className="text-white text-2xl sm:text-2xl md:text-3xl lg:text-3xl">
                                     <Odometer value={odometerMembersBeingTracked} />
                                 </div>
                                 <div className="text-gray-400 mt-2 text-center text-lg">Members Tracked</div>
