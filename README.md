@@ -19,6 +19,11 @@ Please report bugs in `bug-reports` on our server or open an issue on this repo!
 > [!WARNING]
 > **Chatr** has entered Beta! (don't worry, we will deal with the headaches for you)
 
+# Questions
+## Why doesn't Chatr update my user information
+We've noticed during testing that not all updates are properly dealt with, and we aren't able to understand why. We update information whenever we get an "event" from Discord, however not all are broadcasted properly.  
+Sending a message will **100%** update your information as we do update your information whenever a message is sent
+
 # Developer Instructions
 
 This a project created using (Bun)[https://bun.sh]

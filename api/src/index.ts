@@ -181,6 +181,22 @@ app.get('/get/botinfo', async (_req, res) => {
 	return res.status(200).json(data);
 });
 
+app.get('/get/dbusage', (_req, res) => {
+	pool.query(`SELECT table_schema AS "name", SUM(data_length + index_length) / 1024 / 1024 AS "size" FROM information_schema.TABLES GROUP BY table_schema;`, (err, results) => {
+		if (err) {
+			console.error("Error fetching database size:", err);
+			return res.status(500).json({ message: "Internal server error" });
+		} else {
+			const discordXpBot = results.find((result) => result.name === process.env.MYSQL_DATABASE);
+			if (discordXpBot) {
+				return res.status(200).json({ sizeInMB: parseFloat(discordXpBot.size) });
+			} else {
+				return res.status(404).json({ message: "Database not found" });
+			}
+		}
+	})
+});
+
 app.get("/get/:guild/:user", async (req, res) => {
 	const { guild, user } = req.params;
 

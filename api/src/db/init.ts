@@ -36,6 +36,14 @@ export async function initTables() {
 			level INT NOT NULL
 		)
 	`;
+	const createTrackingTable = `
+		CREATE TABLE IF NOT EXISTS tracking (
+			time TIMESTAMP,
+			user_id VARCHAR(255) NOT NULL,
+			guild_id VARCHAR(255) NOT NULL,
+			xp INT NOT NULL
+		)
+	`;
 
 	pool.query(createGuildsTable, (err) => {
 		if (err) {
@@ -58,6 +66,14 @@ export async function initTables() {
 			console.error("Error creating roles table:", err);
 		} else {
 			console.log("Roles table created");
+		}
+	});
+
+	pool.query(createTrackingTable, (err) => {
+		if (err) {
+			console.error("Error creating tracking table:", err);
+		} else {
+			console.log("Tracking table created");
 		}
 	});
 }

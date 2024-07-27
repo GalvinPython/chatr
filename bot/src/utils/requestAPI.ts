@@ -101,6 +101,15 @@ export async function setLevel(guild: string, user: string, level: number) {
 	return response.status === 200;
 }
 
+export async function getDBSize() {
+	const response = await fetch('http://localhost:18103/get/dbusage')
+	if (!response.ok) {
+		console.error(`HTTP error! Status: ${response.status}`);
+		return null;
+	}
+	return response.json();
+}
+
 //#region Roles
 export async function getRoles(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/roles/${guild}/get`, {

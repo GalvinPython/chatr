@@ -13,3 +13,4 @@ export * from './init';
 export * from './queries/guilds';
 export * from './queries/users';
 export * from './queries/updates';
+export * from './queries/tracking';

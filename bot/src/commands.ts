@@ -3,7 +3,7 @@
 import client from '.';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type CommandInteraction, ChannelType, type APIApplicationCommandOption, GuildMember, AttachmentBuilder, ComponentType } from 'discord.js';
 import { heapStats } from 'bun:jsc';
-import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel, setXP, setLevel, syncFromBot } from './utils/requestAPI';
+import { getGuildLeaderboard, makeGETRequest, getRoles, removeRole, addRole, enableUpdates, disableUpdates, getCooldown, setCooldown, getUpdatesChannel, setUpdatesChannel, setXP, setLevel, syncFromBot, getDBSize } from './utils/requestAPI';
 import convertToLevels from './utils/convertToLevels';
 import quickEmbed from './utils/quickEmbed';
 import { Font, RankCardBuilder } from 'canvacord';
@@ -107,6 +107,7 @@ const commands: Record<string, Command> = {
 		execute: async (interaction) => {
 			const heap = heapStats();
 			Bun.gc(false);
+			const dbSize = await getDBSize();
 			await interaction
 				.reply({
 					ephemeral: false,
@@ -116,6 +117,7 @@ const commands: Record<string, Command> = {
 							1024 /
 							1024
 						).toFixed(2)} MB (${(heap.extraMemorySize / 1024 / 1024).toFixed(2,)} MB) (${heap.objectCount.toLocaleString()} objects, ${heap.protectedObjectCount.toLocaleString()} protected-objects)`,
+						`Disk usage: ${dbSize.sizeInMB.toFixed(2)} MB`,
 					]
 						.join('\n')
 						.slice(0, 2000),
