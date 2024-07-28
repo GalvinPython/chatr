@@ -150,7 +150,7 @@ const commands: Record<string, Command> = {
 			const xp = await makeGETRequest(guild as string, user)
 
 			if (!xp || leaderboard.length === 0) {
-				await interaction.reply({
+				await interaction.followUp({
 					ephemeral: true,
 					content: "No XP data available."
 				});
