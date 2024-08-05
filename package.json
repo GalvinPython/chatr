@@ -20,7 +20,7 @@
     "dotenv-cli": "^7.4.2",
     "eslint-config-neon": "^0.1.62",
     "turbo": "^2.0.9",
-    "typescript-eslint": "^7.16.1"
+    "typescript-eslint": "^8.0.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
