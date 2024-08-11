@@ -1,5 +1,7 @@
 import { ActivityType, Events, PresenceUpdateStatus } from 'discord.js';
 import client from '../index';
+import cron from 'cron';
+import sendAutoUpdates from '../utils/sendAutoUpdates';
 
 // update the bot's presence
 function updatePresence() {
@@ -19,6 +21,9 @@ function updatePresence() {
 client.once(Events.ClientReady, async (bot) => {
 	console.log(`Ready! Logged in as ${bot.user?.tag}`);
 	updatePresence();
+	// Create a cron job to update the server count in the status every minute
+	const job = new cron.CronJob('0 * * * *', sendAutoUpdates);
+	job.start();
 });
 
 // Update the server count in the status every minute

@@ -14,7 +14,7 @@ export default function (
 			text:
 				interaction?.client.user.displayName ??
 				client?.user?.displayName ??
-				'No name',
+				'Chatr',
 			iconURL:
 				interaction?.client?.user?.avatarURL() ??
 				client?.user?.avatarURL() ??

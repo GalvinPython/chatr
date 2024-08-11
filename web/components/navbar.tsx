@@ -15,7 +15,6 @@ import { siteConfig } from "@/config/site";
 import NextLink from "next/link";
 import clsx from "clsx";
 
-import { ThemeSwitch } from "@/components/theme-switch";
 import {
 	TwitterIcon,
 	GithubIcon,
@@ -60,7 +59,6 @@ export const Navbar = () => {
 					<Link isExternal href={siteConfig.links.github}>
 						<GithubIcon className="text-default-500" />
 					</Link>
-					<ThemeSwitch />
 				</NavbarItem>
 				<NavbarItem className="hidden md:flex">
 					{/* <Button
@@ -80,7 +78,6 @@ export const Navbar = () => {
 				<Link isExternal href={siteConfig.links.github}>
 					<GithubIcon className="text-default-500" />
 				</Link>
-				<ThemeSwitch />
 				<NavbarMenuToggle />
 			</NavbarContent>
 

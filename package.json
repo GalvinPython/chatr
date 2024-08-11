@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
-    "lint": "eslint . --config eslint.config.mjs",
+    "lint": "eslint .",
 	"build": "cd web && bun run build"
   },
   "devDependencies": {
@@ -18,9 +18,10 @@
     "@types/bun": "latest",
     "@types/eslint__js": "^8.42.3",
     "dotenv-cli": "^7.4.2",
+	"eslint": "^8.56.0",
     "eslint-config-neon": "^0.1.62",
     "turbo": "^2.0.9",
-    "typescript-eslint": "^7.16.1"
+    "typescript-eslint": "^7.0.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
