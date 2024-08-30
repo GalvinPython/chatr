@@ -1,6 +1,6 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
-import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild, removeUser, getAllServersWithUpdatesEnabled } from "./db";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild, removeUser, getAllServersWithUpdatesEnabled, addUserToTrackingData } from "./db";
 
 const app = express();
 const PORT = 18103;
@@ -478,6 +478,10 @@ app.post("/admin/:action/:guild/:target", authMiddleware, async (req, res) => {
 					return res.status(500).json({ message: "Internal server error" });
 			}
 		}
+		case "tracking": {
+			await addUserToTrackingData(target, guild);
+			break;
+		}
 		default:
 			return res.status(400).json({ message: "Illegal request" });
 	}
@@ -738,4 +742,8 @@ async function syncFromLurkr(guild: string) {
 		return [err, false];
 	}
 }
+//#endregion
+
+//#region Tracking
+
 //#endregion

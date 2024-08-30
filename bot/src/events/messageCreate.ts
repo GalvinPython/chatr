@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import client from '../index';
-import { getCooldown, makePOSTRequest, updateGuildInfo } from '../utils/requestAPI';
+import { addUserToTrackingData, getCooldown, makePOSTRequest, updateGuildInfo } from '../utils/requestAPI';
 
 const cooldowns = new Map<string, number>();
 
@@ -24,4 +24,6 @@ client.on('messageCreate', async (message: Message) => {
 	const guildIcon = message.guild?.iconURL() ?? 'https://cdn.discordapp.com/embed/avatars/0.png';
 	const guildMembers = message.guild?.memberCount;
 	await updateGuildInfo(message.guildId as string, guildName as string, guildIcon as string, guildMembers as number);
+
+	await addUserToTrackingData(message.author.id, message.guildId as string);
 });

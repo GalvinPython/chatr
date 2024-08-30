@@ -110,6 +110,16 @@ export async function getDBSize() {
 	return response.json();
 }
 
+export async function addUserToTrackingData(userId: string, guildId: string) {
+	await fetch(`http://localhost:18103/admin/tracking/${guildId}/${userId}`, {
+		"headers": {
+			'Content-Type': 'application/json',
+			'Authorization': process.env.AUTH as string,
+		},
+		"method": "POST"
+	});
+}
+
 //#region Roles
 export async function getRoles(guild: string) {
 	const response = await fetch(`http://localhost:18103/admin/roles/${guild}/get`, {
