@@ -1,6 +1,6 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
-import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild, removeUser, getAllServersWithUpdatesEnabled, addUserToTrackingData } from "./db";
+import { getBotInfo, getGuild, getUser, getUsers, initTables, pool, updateGuild, enableUpdates, disableUpdates, setCooldown, setUpdatesChannel, setXP, setLevel, removeGuild, removeUser, getAllServersWithUpdatesEnabled, addUserToTrackingData, getGuildTrackingData, getUsersTrackingData } from "./db";
 
 const app = express();
 const PORT = 18103;
@@ -195,6 +195,32 @@ app.get('/get/dbusage', (_req, res) => {
 			}
 		}
 	})
+});
+
+app.get('/get/tracking/:guild', async (req, res) => {
+	const { guild } = req.params;
+
+	const [err, data] = await getGuildTrackingData(guild, null);
+
+	if (err) {
+		console.error("Error fetching tracking data:", err);
+		return res.status(500).json({ message: "Internal server error" });
+	}
+
+	return res.status(200).json(data);
+});
+
+app.get('/get/tracking/:guild/:user', async (req, res) => {
+	const { guild, user } = req.params;
+
+	const [err, data] = await getUsersTrackingData(user, guild);
+
+	if (err) {
+		console.error("Error fetching tracking data:", err);
+		return res.status(500).json({ message: "Internal server error" });
+	}
+
+	return res.status(200).json(data);
 });
 
 app.get("/get/:guild/:user", async (req, res) => {
@@ -492,7 +518,7 @@ app.get("/invite", (_req, res) => res.status(308).redirect("https://discord.com/
 app.get('/support', (_req, res) => res.status(308).redirect('https://discord.gg/fpJVTkVngm'));
 
 app.use((_req, res) => {
-	res.status(404).json({ message: "Not found" });
+	res.status(404).send()
 });
 
 app.listen(PORT, () => {
@@ -742,8 +768,4 @@ async function syncFromLurkr(guild: string) {
 		return [err, false];
 	}
 }
-//#endregion
-
-//#region Tracking
-
 //#endregion
