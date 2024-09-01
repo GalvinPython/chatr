@@ -1,32 +1,29 @@
 {
-	"name": "xpbot",
-	"type": "module",
-	"version": "0.1.1",
-	"scripts": {
-		"dev:api": "bun --watch api/index.ts --dev",
-		"dev:bot": "bun --watch bot/index.ts --dev",
-		"api": "bun api/index.ts",
-		"bot": "bun bot/index.ts",
-		"lint": "eslint . --config eslint.config.mjs"
-	},
-	"devDependencies": {
-		"@eslint/js": "^9.7.0",
-		"@types/bun": "latest",
-		"@types/cors": "^2.8.17",
-		"@types/eslint__js": "^8.42.3",
-		"@types/express": "^4.17.21",
-		"typescript-eslint": "^7.16.1"
-	},
-	"peerDependencies": {
-		"typescript": "^5.0.0"
-	},
-	"dependencies": {
-		"canvacord": "^6.0.2",
-		"colorthief": "^2.4.0",
-		"cors": "^2.8.5",
-		"discord.js": "^14.15.3",
-		"ejs": "^3.1.10",
-		"express": "^4.19.2",
-		"mysql2": "^3.10.3"
-	}
+  "name": "@chatr/root",
+  "type": "module",
+  "version": "0.1.0",
+  "packageManager": "bun@1.1.20",
+  "workspaces": [
+    "api",
+    "bot",
+    "web"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "lint": "eslint .",
+	"build": "cd web && bun run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.7.0",
+    "@types/bun": "1.1.6",
+    "@types/eslint__js": "^8.42.3",
+    "dotenv-cli": "^7.4.2",
+	"eslint": "^8.56.0",
+    "eslint-config-neon": "^0.1.62",
+    "turbo": "^2.0.9",
+    "typescript-eslint": "^7.0.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
 }
