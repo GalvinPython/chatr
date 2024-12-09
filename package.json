@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
-    "lint": "eslint .",
+    "lint": "eslint \"bot/**\" \"web/**\" \"api/**\" --ext .ts,.tsx -c .eslintrc.json",
 	"build": "cd web && bun run build"
   },
   "devDependencies": {
@@ -18,10 +18,20 @@
     "@types/bun": "1.1.6",
     "@types/eslint__js": "^8.42.3",
     "dotenv-cli": "^7.4.2",
-	"eslint": "^8.56.0",
     "eslint-config-neon": "^0.1.62",
     "turbo": "^2.0.9",
-    "typescript-eslint": "^7.0.1"
+    "typescript-eslint": "^7.0.1",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^8.2.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-react": "^7.23.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-unused-imports": "^3.2.0",
+    "@typescript-eslint/eslint-plugin": "7.2.0",
+    "@typescript-eslint/parser": "7.2.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
