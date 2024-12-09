@@ -1,0 +1,5 @@
+# Ensure all files use LF endings
+* text=auto eol=lf
+
+# Mark .lockb files as binary
+*.lockb binary
