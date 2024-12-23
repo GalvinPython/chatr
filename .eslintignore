@@ -9,6 +9,7 @@ scripts/*
 *.config.js
 .DS_Store
 node_modules
+**/bun.lockb
 coverage
 .next
 build
@@ -18,3 +19,4 @@ build
 !plopfile.js
 !react-shim.js
 !tsup.config.ts
+**/favicon.ico

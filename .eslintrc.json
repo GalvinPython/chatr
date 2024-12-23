@@ -43,7 +43,11 @@
         "prettier/prettier": [
             "warn",
             {
-                "tabWidth": 4
+                "tabWidth": 4,
+                "useTabs": false,
+                "semi": true,
+                "singleQuote": false,
+                "trailingComma": "es5"
             }
         ],
         "no-unused-vars": "off",
@@ -99,25 +103,13 @@
             },
             {
                 "blankLine": "always",
-                "prev": [
-                    "const",
-                    "let",
-                    "var"
-                ],
+                "prev": ["const", "let", "var"],
                 "next": "*"
             },
             {
                 "blankLine": "any",
-                "prev": [
-                    "const",
-                    "let",
-                    "var"
-                ],
-                "next": [
-                    "const",
-                    "let",
-                    "var"
-                ]
+                "prev": ["const", "let", "var"],
+                "next": ["const", "let", "var"]
             }
         ]
     }
