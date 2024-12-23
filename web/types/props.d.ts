@@ -22,5 +22,5 @@ export interface PropsGuilds {
     odometerPoints: number;
     odometerMembers: number;
     odometerMembersBeingTracked: number;
-	leaderboard: Leaderboard[];
+    leaderboard: Leaderboard[];
 }

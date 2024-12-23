@@ -1,7 +1,7 @@
 import { pool } from ".";
 
 export async function initTables() {
-	const createGuildsTable = `
+    const createGuildsTable = `
 		CREATE TABLE IF NOT EXISTS guilds (
 			id VARCHAR(255) NOT NULL PRIMARY KEY,
 			name VARCHAR(255),
@@ -13,7 +13,7 @@ export async function initTables() {
 			is_in_guild BOOLEAN DEFAULT TRUE
 		)
 	`;
-	const createUsersTable = `
+    const createUsersTable = `
 		CREATE TABLE IF NOT EXISTS users (
 			id VARCHAR(255) NOT NULL,
 			guild_id VARCHAR(255) NOT NULL,
@@ -28,7 +28,7 @@ export async function initTables() {
 			PRIMARY KEY (id, guild_id)
 		)
 	`;
-	const createRolesTable = `
+    const createRolesTable = `
 		CREATE TABLE IF NOT EXISTS roles (
 			id VARCHAR(255) NOT NULL PRIMARY KEY,
 			guild_id VARCHAR(255) NOT NULL,
@@ -36,7 +36,7 @@ export async function initTables() {
 			level INT NOT NULL
 		)
 	`;
-	const createTrackingTable = `
+    const createTrackingTable = `
 		CREATE TABLE IF NOT EXISTS tracking (
 			time TIMESTAMP,
 			user_id VARCHAR(255) NOT NULL,
@@ -45,35 +45,35 @@ export async function initTables() {
 		)
 	`;
 
-	pool.query(createGuildsTable, (err) => {
-		if (err) {
-			console.error("Error creating guilds table:", err);
-		} else {
-			console.log("Guilds table created");
-		}
-	});
+    pool.query(createGuildsTable, (err) => {
+        if (err) {
+            console.error("Error creating guilds table:", err);
+        } else {
+            console.log("Guilds table created");
+        }
+    });
 
-	pool.query(createUsersTable, (err) => {
-		if (err) {
-			console.error("Error creating users table:", err);
-		} else {
-			console.log("Users table created");
-		}
-	});
+    pool.query(createUsersTable, (err) => {
+        if (err) {
+            console.error("Error creating users table:", err);
+        } else {
+            console.log("Users table created");
+        }
+    });
 
-	pool.query(createRolesTable, (err) => {
-		if (err) {
-			console.error("Error creating roles table:", err);
-		} else {
-			console.log("Roles table created");
-		}
-	});
+    pool.query(createRolesTable, (err) => {
+        if (err) {
+            console.error("Error creating roles table:", err);
+        } else {
+            console.log("Roles table created");
+        }
+    });
 
-	pool.query(createTrackingTable, (err) => {
-		if (err) {
-			console.error("Error creating tracking table:", err);
-		} else {
-			console.log("Tracking table created");
-		}
-	});
+    pool.query(createTrackingTable, (err) => {
+        if (err) {
+            console.error("Error creating tracking table:", err);
+        } else {
+            console.log("Tracking table created");
+        }
+    });
 }
