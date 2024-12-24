@@ -1,12 +1,13 @@
 import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Image } from "@nextui-org/react";
+import { Button } from "@nextui-org/react";
 import Link from "next/link";
 
 import DefaultLayout from "@/layouts/default";
 import { API_URL, useUser } from "@/lib/queries";
 import { subtitle, title } from "@/components/primitives";
 import { LoaderIcon } from "@/components/icons";
+import { ServerIcon } from "@/components/server-icon";
 
 interface Guild {
     id: string;
@@ -60,17 +61,7 @@ export default function Dashboard() {
                                         className="bg-gray-800 p-6 rounded-lg flex flex-col justify-center space-y-4 shadow-lg"
                                     >
                                         <div className="flex flex-col space-y-3 items-center justify-center">
-                                            <Image
-                                                alt={guild.name + " avatar"}
-                                                className="text-center"
-                                                height={64}
-                                                src={
-                                                    guild.icon
-                                                        ? guild.icon +
-                                                          "?size=256"
-                                                        : "https://cdn.discordapp.com/embed/avatars/0.png"
-                                                }
-                                            />
+                                            <ServerIcon guild={guild} />
                                             <span className="text-white text-2xl font-bold text-center">
                                                 {guild.name}
                                             </span>
