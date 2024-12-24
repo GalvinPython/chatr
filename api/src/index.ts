@@ -962,7 +962,7 @@ app.get("/invite", (req, res) => {
     const guildId = req.query.guild_id;
 
     if (!guildId || typeof guildId !== "string")
-        res.redirect(
+        res.status(308).redirect(
             "https://discord.com/oauth2/authorize?client_id=1245807579624378601&permissions=1099780115520&integration_type=0&scope=bot+applications.commands"
         );
     else {
