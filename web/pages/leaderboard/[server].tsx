@@ -10,13 +10,13 @@ import DefaultLayout from "@/layouts/default";
 import { Leaderboard } from "@/types/leaderboard";
 import { PropsGuilds } from "@/types/props";
 import { ChartOptions, ChartPointsFormatted } from "@/types/chart";
+import { API_URL } from "@/lib/queries";
 
 const Odometer = dynamic(import("react-odometerjs"), {
     ssr: false,
 });
 
 interface PageState {
-    urlToFetch: string;
     isLoading: boolean;
     discordGuildExists: boolean;
     discordGuildId: string;
@@ -36,10 +36,6 @@ class IndexPage extends Component<object, PageState> {
         super(props);
 
         this.state = {
-            urlToFetch:
-                process.env.NODE_ENV === "development"
-                    ? "http://localhost:18103"
-                    : "https://api.chatr.fun",
             isLoading: true,
             discordGuildExists: props.discordGuildExists,
             discordGuildId: props.discordGuildId,
@@ -162,7 +158,7 @@ class IndexPage extends Component<object, PageState> {
         if (this.state.discordGuildExists == null) {
             return;
         } else {
-            fetch(`${this.state.urlToFetch}/get/${this.state.discordGuildId}`)
+            fetch(`${API_URL}/get/${this.state.discordGuildId}`)
                 .then((response) => response.json())
                 .then((data) => {
                     const points = data.totalXp;
@@ -227,22 +223,12 @@ class IndexPage extends Component<object, PageState> {
 
     render() {
         const {
-            discordGuildExists,
             odometerPoints,
             odometerMembersBeingTracked,
             odometerMembers,
             chartOptions,
             leaderboard,
         } = this.state;
-
-        if (!discordGuildExists) {
-            // Redirect to 404
-            if (typeof window != "undefined") {
-                window.location.href = "/404";
-            }
-
-            return null;
-        }
 
         return (
             <DefaultLayout>
@@ -485,6 +471,7 @@ export async function getServerSideProps(context: {
                     odometerMembersBeingTracked: null,
                     leaderboard: null,
                 },
+                notFound: true,
             };
         }
     } catch (error) {

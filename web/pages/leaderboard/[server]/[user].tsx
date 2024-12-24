@@ -8,13 +8,13 @@ import DefaultLayout from "@/layouts/default";
 import "odometer/themes/odometer-theme-default.css";
 import { ChartOptions, ChartPointsFormatted } from "@/types/chart";
 import { PropsUsers } from "@/types/props";
+import { API_URL } from "@/lib/queries";
 
 const Odometer = dynamic(import("react-odometerjs"), {
     ssr: false,
 });
 
 interface PageState {
-    urlToFetch: string;
     isLoading: boolean;
     discordAccountExists: boolean;
     discordUserId: string;
@@ -38,10 +38,6 @@ class IndexPage extends Component<object, PageState> {
         super(props);
 
         this.state = {
-            urlToFetch:
-                process.env.NODE_ENV === "development"
-                    ? "http://localhost:18103"
-                    : "https://api.chatr.fun",
             isLoading: true, // Flag to indicate whether a request is in progress
             discordAccountExists: props.discordAccountExists,
             discordUserId: props.discordUserId,
@@ -171,7 +167,7 @@ class IndexPage extends Component<object, PageState> {
             return;
         } else {
             fetch(
-                `${this.state.urlToFetch}/get/${this.state.discordGuildId}/${this.state.discordUserId}`
+                `${API_URL}/get/${this.state.discordGuildId}/${this.state.discordUserId}`
             )
                 .then((response) => response.json())
                 .then((data) => {
@@ -239,7 +235,6 @@ class IndexPage extends Component<object, PageState> {
 
     render() {
         const {
-            discordAccountExists,
             odometerPoints,
             odometerPointsNeededToNextLevel,
             odometerPointsNeededForNextLevel,
@@ -247,15 +242,6 @@ class IndexPage extends Component<object, PageState> {
             odometerLevel,
             chartOptions,
         } = this.state;
-
-        if (!discordAccountExists) {
-            // Redirect to 404
-            if (typeof window != "undefined") {
-                window.location.href = "/404";
-            }
-
-            return null;
-        }
 
         return (
             <DefaultLayout>
@@ -403,6 +389,7 @@ export async function getServerSideProps(context: {
                     odometerPointsNeededForNextLevel: null,
                     odometerProgressToNextLevelPercentage: null,
                 },
+                notFound: true,
             };
         }
     } catch (error) {

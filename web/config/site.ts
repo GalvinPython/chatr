@@ -9,10 +9,6 @@ export const siteConfig = {
             href: "/",
         },
         {
-            label: "Dashboard",
-            href: "https://dashboard.chatr.fun",
-        },
-        {
             label: "Docs",
             href: "https://docs.chatr.fun",
         },

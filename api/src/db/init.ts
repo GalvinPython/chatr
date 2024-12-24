@@ -44,6 +44,17 @@ export async function initTables() {
 			xp INT NOT NULL
 		)
 	`;
+    const createOauthUsersTable = `
+      CREATE TABLE IF NOT EXISTS oauth_users (
+        id VARCHAR(255) NOT NULL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        username VARCHAR(255) NOT NULL,
+        avatar VARCHAR(255) NOT NULL,
+        access_token VARCHAR(255) NOT NULL,
+        refresh_token VARCHAR(255) NOT NULL,
+        expires_at TIMESTAMP NOT NULL
+      )
+    `;
 
     pool.query(createGuildsTable, (err) => {
         if (err) {
@@ -74,6 +85,14 @@ export async function initTables() {
             console.error("Error creating tracking table:", err);
         } else {
             console.log("Tracking table created");
+        }
+    });
+
+    pool.query(createOauthUsersTable, (err) => {
+        if (err) {
+            console.error("Error creating OAuth users table:", err);
+        } else {
+            console.log("OAuth users table created");
         }
     });
 }
