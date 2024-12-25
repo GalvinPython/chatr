@@ -12,6 +12,15 @@ export interface OAuthUser {
     expires_at: Date;
 }
 
+export type OAuthUserWithoutTokens = Without<
+    OAuthUser,
+    "access_token" | "refresh_token" | "expires_at"
+>;
+
+type Without<T, K> = {
+    [L in keyof T]: L extends K ? undefined : T[L];
+};
+
 export function getOAuthUser(
     id: string
 ): Promise<[QueryError, null] | [null, OAuthUser]> {

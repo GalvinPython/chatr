@@ -19,6 +19,7 @@ import NextLink from "next/link";
 import clsx from "clsx";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
+import NextImage from "next/image";
 
 import { siteConfig } from "@/config/site";
 import {
@@ -36,8 +37,8 @@ export const Navbar = () => {
 
     const logout = useMutation({
         mutationFn: () =>
-            fetch(`${API_URL}/auth/logout`, {
-                method: "POST",
+            fetch(`${API_URL}/user/me`, {
+                method: "DELETE",
                 credentials: "include",
             }),
         onSuccess: () => {
@@ -106,6 +107,7 @@ export const Navbar = () => {
                             <DropdownTrigger>
                                 <Image
                                     alt={user.name + " avatar"}
+                                    as={NextImage}
                                     className="rounded-full hover:cursor-pointer"
                                     height={30}
                                     src={user.avatar}
@@ -186,6 +188,7 @@ export const Navbar = () => {
                             <div className="flex items-center gap-2">
                                 <Image
                                     alt={user.name + " avatar"}
+                                    as={NextImage}
                                     className="rounded-full hover:cursor-pointer"
                                     height={30}
                                     src={user.avatar}

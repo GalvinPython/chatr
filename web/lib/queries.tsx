@@ -1,15 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 
-export interface User {
-    id: string;
-    name: string;
-    username: string;
-    avatar: string;
-    access_token: string;
-    refresh_token: string;
-    expires_at: Date;
-}
+import { User } from "@/types/api";
 
 export const API_URL =
     process.env.NODE_ENV === "development"

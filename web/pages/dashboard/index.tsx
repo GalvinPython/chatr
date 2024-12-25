@@ -3,16 +3,10 @@ import Link from "next/link";
 import { GetServerSidePropsContext } from "next";
 
 import DefaultLayout from "@/layouts/default";
-import { API_URL, User, UserProvider } from "@/lib/queries";
+import { API_URL, UserProvider } from "@/lib/queries";
 import { subtitle, title } from "@/components/primitives";
 import { ServerIcon } from "@/components/server-icon";
-
-interface Guild {
-    id: string;
-    name: string;
-    icon?: string;
-    botIsInGuild: boolean;
-}
+import { Guild, User } from "@/types/api";
 
 export default function Dashboard({
     user,
@@ -41,7 +35,11 @@ export default function Dashboard({
                                     className="bg-gray-800 p-6 rounded-lg flex flex-col justify-center space-y-4 shadow-lg"
                                 >
                                     <div className="flex flex-col space-y-3 items-center justify-center">
-                                        <ServerIcon guild={guild} />
+                                        <ServerIcon
+                                            guild={guild}
+                                            height={64}
+                                            width={64}
+                                        />
                                         <span className="text-white text-2xl font-bold text-center">
                                             {guild.name}
                                         </span>
@@ -83,7 +81,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
     if (userResponse.status === 401)
         return {
-            props: { guilds: null },
+            props: { user: null, guilds: null },
             redirect: {
                 destination: `${API_URL}/auth/login`,
                 permanent: false,

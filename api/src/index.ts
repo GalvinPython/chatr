@@ -834,129 +834,159 @@ app.get("/auth/callback", async (req, res) => {
     res.redirect(`${WEBSITE_URL}/dashboard`);
 });
 
-app.get(
-    "/auth/user",
+const userRouter = express.Router();
+
+userRouter.use(
     cors({
         origin: ["http://localhost:56413", "https://chatr.fun"],
         credentials: true,
-    }),
-    async (req, res) => {
-        const user = await getUserFromRequest(req);
-
-        if (!user) return res.status(401).json({ message: "Unauthorized" });
-
-        res.json(user);
-    }
+    })
 );
 
-app.post(
-    "/auth/logout",
-    cors({
-        origin: ["http://localhost:56413", "https://chatr.fun"],
-        credentials: true,
-    }),
-    async (req, res) => {
-        if (!(await getUserFromRequest(req))) {
-            return res.status(401).json({ message: "Unauthorized" });
+userRouter.get("/", async (req, res) => {
+    const user = await getUserFromRequest(req);
+
+    if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+    res.json({
+        ...user,
+        access_token: undefined,
+        refresh_token: undefined,
+        expires_at: undefined,
+    });
+});
+
+userRouter.delete("/", async (req, res) => {
+    if (!(await getUserFromRequest(req))) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    res.clearCookie("token");
+
+    return res.sendStatus(200);
+});
+
+app.use("/user/me", userRouter);
+
+app.get("/auth/user/guilds", async (req, res) => {
+    const user = await getUserFromRequest(req);
+
+    if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+    const botGuildsResponse = await fetch(
+        "https://discord.com/api/users/@me/guilds",
+        {
+            headers: {
+                Authorization: `Bot ${process.env.DISCORD_TOKEN_DEV ?? process.env.DISCORD_TOKEN}`,
+            },
         }
+    );
+    const botGuilds = await botGuildsResponse.json();
 
-        res.clearCookie("token");
+    const [err, accessToken] = await getAccessToken(user);
 
-        return res.sendStatus(200);
-    }
-);
+    if (err) return res.status(500).json({ message: err });
 
-app.get(
-    "/auth/user/guilds",
-    cors({
-        origin: ["http://localhost:56413", "https://chatr.fun"],
-        credentials: true,
-    }),
-    async (req, res) => {
-        const user = await getUserFromRequest(req);
+    const userGuildsResponse = await fetch(
+        "https://discord.com/api/users/@me/guilds",
+        {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        }
+    );
+    const userGuilds = await userGuildsResponse.json();
 
-        if (!user) return res.status(401).json({ message: "Unauthorized" });
+    const filteredGuilds = userGuilds.filter(
+        (guild: any) => guild.owner || (guild.permissions & 0x20) === 0x20
+    );
 
-        let accessToken = user.access_token;
-
-        if (new Date().getTime() > user.expires_at.getTime()) {
-            const body = new URLSearchParams();
-
-            body.append("client_id", process.env.DISCORD_CLIENT_ID!);
-            body.append("client_secret", process.env.DISCORD_CLIENT_SECRET!);
-            body.append("grant_type", "refresh_token");
-            body.append("refresh_token", user.refresh_token);
-            body.append("scope", "identify guilds");
-
-            const tokenResponse = await fetch(
-                "https://discord.com/api/oauth2/token",
-                {
-                    method: "POST",
-                    body,
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                    },
+    res.json(
+        filteredGuilds
+            .map((guild: any) => ({
+                ...guild,
+                icon: guild.icon
+                    ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.webp`
+                    : null,
+                botIsInGuild: botGuilds.some(
+                    (botGuild: any) => botGuild.id === guild.id
+                ),
+            }))
+            .sort((a: any, b: any) => {
+                if (a.botIsInGuild === b.botIsInGuild) {
+                    return a.name.localeCompare(b.name);
                 }
-            );
 
-            if (tokenResponse.status !== 200) {
-                console.error("Error fetching token:", tokenResponse);
+                return Number(b.botIsInGuild) - Number(a.botIsInGuild);
+            })
+    );
+});
 
-                return res
-                    .status(500)
-                    .json({ message: "Internal server error" });
-            }
+app.options(
+    "/auth/update-guild",
+    cors({
+        origin: ["http://localhost:56413", "https://chatr.fun"],
+        credentials: true,
+    })
+);
+app.put(
+    "/auth/update-guild",
+    cors({
+        origin: ["http://localhost:56413", "https://chatr.fun"],
+        credentials: true,
+    }),
+    async (req, res) => {
+        if (!(await getUserFromRequest(req)))
+            return res.status(401).json({ message: "Unauthorized" });
 
-            const tokenData = await tokenResponse.json();
+        const body = req.body;
+        const { guild } = req.body;
 
-            accessToken = tokenData.access_token;
+        if (!guild) return res.status(400).json({ message: "Illegal request" });
+
+        if (body.cooldown) {
+            await setCooldown(guild, body.cooldown);
         }
 
-        const botGuildsResponse = await fetch(
-            `https://discord.com/api/users/@me/guilds`,
-            {
-                headers: {
-                    Authorization: `Bot ${process.env.DISCORD_TOKEN_DEV ?? process.env.DISCORD_TOKEN}`,
-                },
-            }
-        );
-        const botGuilds = await botGuildsResponse.json();
+        if (body.updates.enabled === true) {
+            await enableUpdates(guild);
+        } else if (body.updates.enabled === false) {
+            await disableUpdates(guild);
+        }
 
-        const userGuildsResponse = await fetch(
-            `https://discord.com/api/users/@me/guilds`,
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            }
-        );
-        const userGuilds = await userGuildsResponse.json();
+        if (body.updates.channel) {
+            await setUpdatesChannel(guild, body.updates.channel);
+        }
 
-        const filteredGuilds = userGuilds.filter(
-            (guild: any) => guild.owner || (guild.permissions & 0x20) === 0x20
-        );
-
-        res.json(
-            filteredGuilds
-                .map((guild: any) => ({
-                    ...guild,
-                    icon: guild.icon
-                        ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.webp`
-                        : null,
-                    botIsInGuild: botGuilds.some(
-                        (botGuild: any) => botGuild.id === guild.id
-                    ),
-                }))
-                .sort((a: any, b: any) => {
-                    if (a.botIsInGuild === b.botIsInGuild) {
-                        return a.name.localeCompare(b.name);
-                    }
-
-                    return Number(b.botIsInGuild) - Number(a.botIsInGuild);
-                })
-        );
+        return res.sendStatus(204);
     }
 );
+
+// TODO: fetch from the bot itself using discord.js
+// (would allow us to do permission filtering)
+app.get("/channels/:guild", authMiddleware, async (req, res) => {
+    const { guild } = req.params;
+
+    const channelsResponse = await fetch(
+        `https://discord.com/api/v10/guilds/${guild}/channels`,
+        {
+            headers: {
+                Authorization: `Bot ${process.env.DISCORD_TOKEN_DEV ?? process.env.DISCORD_TOKEN}`,
+            },
+        }
+    );
+    const channelsData = await channelsResponse.json();
+
+    if (channelsData.code === 50007) {
+        return res.status(404).json({ message: "Guild not found" });
+    }
+
+    const channels = channelsData
+        .filter((channel: any) => channel.type === 0)
+        .sort((a: any, b: any) => a.position - b.position);
+
+    res.json(channels);
+});
 
 app.get("/invite", (req, res) => {
     const guildId = req.query.guild_id;
@@ -1083,6 +1113,45 @@ async function getUserFromRequest(req: Request): Promise<OAuthUser | null> {
     if (err) return null;
 
     return user;
+}
+
+async function getAccessToken(
+    user: OAuthUser
+): Promise<[string, null] | [null, string]> {
+    let accessToken = user.access_token;
+
+    if (new Date().getTime() > user.expires_at.getTime()) {
+        const body = new URLSearchParams();
+
+        body.append("client_id", process.env.DISCORD_CLIENT_ID!);
+        body.append("client_secret", process.env.DISCORD_CLIENT_SECRET!);
+        body.append("grant_type", "refresh_token");
+        body.append("refresh_token", user.refresh_token);
+        body.append("scope", "identify guilds");
+
+        const tokenResponse = await fetch(
+            "https://discord.com/api/oauth2/token",
+            {
+                method: "POST",
+                body,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            }
+        );
+
+        if (tokenResponse.status !== 200) {
+            console.error("Error fetching token:", tokenResponse);
+
+            return ["Internal server error", null];
+        }
+
+        const tokenData = await tokenResponse.json();
+
+        accessToken = tokenData.access_token;
+    }
+
+    return [null, accessToken];
 }
 //#endregion
 
