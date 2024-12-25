@@ -115,7 +115,13 @@ export const Navbar = () => {
                                 />
                             </DropdownTrigger>
                             <DropdownMenu aria-label="User menu">
-                                <DropdownItem as={NextLink} href="/dashboard">
+                                <DropdownItem>
+                                    <p className="text-xs">Signed in as</p>
+                                    <p className="text-base font-bold">
+                                        {user.name}
+                                    </p>
+                                </DropdownItem>
+                                <DropdownItem href="/dashboard">
                                     Dashboard
                                 </DropdownItem>
                                 <DropdownItem

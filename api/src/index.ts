@@ -40,7 +40,7 @@ import {
 const app = express();
 const PORT = 18103;
 
-app.use(cors());
+// app.use(cors());
 app.use(express.json());
 app.use((req, _res, next) => {
     if (req.headers.cookie) {
@@ -274,7 +274,7 @@ app.get("/get/tracking/:guild/:user", async (req, res) => {
     return res.status(200).json(data);
 });
 
-app.get("/get/:guild/:user", async (req, res) => {
+app.get("/get/:guild/:user", cors(), async (req, res) => {
     const { guild, user } = req.params;
 
     const [err, result] = await getUser(user, guild);
@@ -289,7 +289,7 @@ app.get("/get/:guild/:user", async (req, res) => {
     }
 });
 
-app.get("/get/:guild", async (req, res) => {
+app.get("/get/:guild", cors(), async (req, res) => {
     const { guild } = req.params;
 
     const [guildErr, guildData] = await getGuild(guild);
@@ -834,8 +834,16 @@ app.get("/auth/callback", async (req, res) => {
     res.redirect(`${WEBSITE_URL}/dashboard`);
 });
 
+app.options(
+    "/user/me",
+    cors({
+        origin: ["http://localhost:56413", "https://chatr.fun"],
+        credentials: true,
+    })
+);
+
 app.get(
-    "/auth/user",
+    "/user/me",
     cors({
         origin: ["http://localhost:56413", "https://chatr.fun"],
         credentials: true,
@@ -854,8 +862,8 @@ app.get(
     }
 );
 
-app.post(
-    "/auth/logout",
+app.delete(
+    "/user/me",
     cors({
         origin: ["http://localhost:56413", "https://chatr.fun"],
         credentials: true,
@@ -871,7 +879,48 @@ app.post(
     }
 );
 
-app.get("/auth/user/guilds", async (req, res) => {
+app.options(
+    "/dashboard/update-guild",
+    cors({
+        origin: ["http://localhost:56413", "https://chatr.fun"],
+        credentials: true,
+    })
+);
+
+app.post(
+    "/dashboard/update-guild",
+    cors({
+        origin: ["http://localhost:56413", "https://chatr.fun"],
+        credentials: true,
+    }),
+    async (req, res) => {
+        if (!(await getUserFromRequest(req)))
+            return res.status(401).json({ message: "Unauthorized" });
+
+        const body = req.body;
+        const { guild } = req.body;
+
+        if (!guild) return res.status(400).json({ message: "Illegal request" });
+
+        if (body.cooldown) {
+            await setCooldown(guild, body.cooldown);
+        }
+
+        if (body.updates.enabled === true) {
+            await enableUpdates(guild);
+        } else if (body.updates.enabled === false) {
+            await disableUpdates(guild);
+        }
+
+        if (body.updates.channel) {
+            await setUpdatesChannel(guild, body.updates.channel);
+        }
+
+        return res.sendStatus(200);
+    }
+);
+
+app.get("/user/me/guilds", async (req, res) => {
     const user = await getUserFromRequest(req);
 
     if (!user) return res.status(401).json({ message: "Unauthorized" });
@@ -925,49 +974,9 @@ app.get("/auth/user/guilds", async (req, res) => {
     );
 });
 
-app.options(
-    "/auth/update-guild",
-    cors({
-        origin: ["http://localhost:56413", "https://chatr.fun"],
-        credentials: true,
-    })
-);
-app.put(
-    "/auth/update-guild",
-    cors({
-        origin: ["http://localhost:56413", "https://chatr.fun"],
-        credentials: true,
-    }),
-    async (req, res) => {
-        if (!(await getUserFromRequest(req)))
-            return res.status(401).json({ message: "Unauthorized" });
-
-        const body = req.body;
-        const { guild } = req.body;
-
-        if (!guild) return res.status(400).json({ message: "Illegal request" });
-
-        if (body.cooldown) {
-            await setCooldown(guild, body.cooldown);
-        }
-
-        if (body.updates.enabled === true) {
-            await enableUpdates(guild);
-        } else if (body.updates.enabled === false) {
-            await disableUpdates(guild);
-        }
-
-        if (body.updates.channel) {
-            await setUpdatesChannel(guild, body.updates.channel);
-        }
-
-        return res.sendStatus(204);
-    }
-);
-
 // TODO: fetch from the bot itself using discord.js
 // (would allow us to do permission filtering)
-app.get("/channels/:guild", authMiddleware, async (req, res) => {
+app.get("/dashboard/channels/:guild", authMiddleware, async (req, res) => {
     const { guild } = req.params;
 
     const channelsResponse = await fetch(

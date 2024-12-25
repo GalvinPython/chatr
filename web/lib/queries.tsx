@@ -25,7 +25,7 @@ export const useUser = () => {
     const query = useQuery<User | null>({
         queryKey: ["user"],
         queryFn: async () => {
-            const res = await fetch(`${API_URL}/auth/user`, {
+            const res = await fetch(`${API_URL}/user/me`, {
                 credentials: "include",
             });
 

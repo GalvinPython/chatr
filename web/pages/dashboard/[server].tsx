@@ -34,7 +34,7 @@ export default function Dashboard({
 
     const onSubmit = useCallback(async (e: FormEvent) => {
         e.preventDefault();
-        await fetch(`${API_URL}/auth/update-guild`, {
+        await fetch(`${API_URL}/dashboard/update-guild`, {
             body: JSON.stringify({
                 guild: guild.id,
                 cooldown: parseInt(cooldown) * 1000,
@@ -47,7 +47,7 @@ export default function Dashboard({
             headers: {
                 "Content-Type": "application/json",
             },
-            method: "PUT",
+            method: "POST",
         });
     }, []);
 
@@ -135,7 +135,7 @@ export default function Dashboard({
 }
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-    const userResponse = await fetch(`${API_URL}/auth/user`, {
+    const userResponse = await fetch(`${API_URL}/user/me`, {
         headers: {
             cookie: ctx.req.headers.cookie ?? "",
         },
@@ -157,7 +157,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     });
 
     const channelsResponse = await fetch(
-        `${API_URL}/channels/${ctx.params!.server}`,
+        `${API_URL}/dashboard/channels/${ctx.params!.server}`,
         {
             headers: {
                 Authorization: process.env.AUTH!,

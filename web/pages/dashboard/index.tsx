@@ -73,7 +73,7 @@ export default function Dashboard({
 }
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-    const userResponse = await fetch(`${API_URL}/auth/user`, {
+    const userResponse = await fetch(`${API_URL}/user/me`, {
         headers: {
             cookie: ctx.req.headers.cookie ?? "",
         },
@@ -88,7 +88,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
             },
         };
 
-    const guildsResponse = await fetch(`${API_URL}/auth/user/guilds`, {
+    const guildsResponse = await fetch(`${API_URL}/user/me/guilds`, {
         headers: {
             cookie: ctx.req.headers.cookie ?? "",
         },
