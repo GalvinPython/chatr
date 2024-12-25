@@ -834,39 +834,42 @@ app.get("/auth/callback", async (req, res) => {
     res.redirect(`${WEBSITE_URL}/dashboard`);
 });
 
-const userRouter = express.Router();
-
-userRouter.use(
+app.get(
+    "/auth/user",
     cors({
         origin: ["http://localhost:56413", "https://chatr.fun"],
         credentials: true,
-    })
+    }),
+    async (req, res) => {
+        const user = await getUserFromRequest(req);
+
+        if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+        res.json({
+            ...user,
+            access_token: undefined,
+            refresh_token: undefined,
+            expires_at: undefined,
+        });
+    }
 );
 
-userRouter.get("/", async (req, res) => {
-    const user = await getUserFromRequest(req);
+app.post(
+    "/auth/logout",
+    cors({
+        origin: ["http://localhost:56413", "https://chatr.fun"],
+        credentials: true,
+    }),
+    async (req, res) => {
+        if (!(await getUserFromRequest(req))) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
 
-    if (!user) return res.status(401).json({ message: "Unauthorized" });
+        res.clearCookie("token");
 
-    res.json({
-        ...user,
-        access_token: undefined,
-        refresh_token: undefined,
-        expires_at: undefined,
-    });
-});
-
-userRouter.delete("/", async (req, res) => {
-    if (!(await getUserFromRequest(req))) {
-        return res.status(401).json({ message: "Unauthorized" });
+        return res.sendStatus(200);
     }
-
-    res.clearCookie("token");
-
-    return res.sendStatus(200);
-});
-
-app.use("/user/me", userRouter);
+);
 
 app.get("/auth/user/guilds", async (req, res) => {
     const user = await getUserFromRequest(req);

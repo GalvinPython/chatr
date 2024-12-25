@@ -37,8 +37,8 @@ export const Navbar = () => {
 
     const logout = useMutation({
         mutationFn: () =>
-            fetch(`${API_URL}/user/me`, {
-                method: "DELETE",
+            fetch(`${API_URL}/auth/logout`, {
+                method: "POST",
                 credentials: "include",
             }),
         onSuccess: () => {

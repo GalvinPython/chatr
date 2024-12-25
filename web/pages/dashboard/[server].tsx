@@ -135,7 +135,7 @@ export default function Dashboard({
 }
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-    const userResponse = await fetch(`${API_URL}/user/me`, {
+    const userResponse = await fetch(`${API_URL}/auth/user`, {
         headers: {
             cookie: ctx.req.headers.cookie ?? "",
         },
