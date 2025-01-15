@@ -7,15 +7,50 @@ import {
     NavbarBrand,
     NavbarItem,
     NavbarMenuItem,
+    Button,
+    Image,
+    Dropdown,
+    DropdownTrigger,
+    DropdownMenu,
+    DropdownItem,
 } from "@nextui-org/react";
 import { link as linkStyles } from "@nextui-org/theme";
 import NextLink from "next/link";
 import clsx from "clsx";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/router";
+import NextImage from "next/image";
 
 import { siteConfig } from "@/config/site";
-import { TwitterIcon, GithubIcon, DiscordIcon } from "@/components/icons";
+import {
+    TwitterIcon,
+    GithubIcon,
+    DiscordIcon,
+    LoaderIcon,
+} from "@/components/icons";
+import { API_URL, useUser } from "@/lib/queries";
 
 export const Navbar = () => {
+    const router = useRouter();
+    const queryClient = useQueryClient();
+    const { user, isLoading } = useUser();
+
+    const logout = useMutation({
+        mutationFn: () =>
+            fetch(`${API_URL}/user/me`, {
+                method: "DELETE",
+                credentials: "include",
+            }),
+        onSuccess: () => {
+            if (router.pathname.includes("dashboard")) {
+                router.push("/");
+            }
+            queryClient.invalidateQueries({
+                queryKey: ["user"],
+            });
+        },
+    });
+
     return (
         <NextUINavbar maxWidth="xl" position="sticky">
             <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
@@ -61,16 +96,53 @@ export const Navbar = () => {
                     </Link>
                 </NavbarItem>
                 <NavbarItem className="hidden md:flex">
-                    {/* <Button
-						isExternal
-						as={Link}
-						className="text-sm font-normal text-default-600 bg-default-100"
-						href={siteConfig.links.sponsor}
-						startContent={<HeartFilledIcon className="text-danger" />}
-						variant="flat"
-					>
-						Sponsor
-					</Button> */}
+                    {isLoading ? (
+                        <LoaderIcon
+                            className="animate-spin"
+                            height={24}
+                            width={24}
+                        />
+                    ) : user ? (
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <Image
+                                    alt={user.name + " avatar"}
+                                    as={NextImage}
+                                    className="rounded-full hover:cursor-pointer"
+                                    height={30}
+                                    src={user.avatar}
+                                    width={30}
+                                />
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="User menu">
+                                <DropdownItem>
+                                    <p className="text-xs">Signed in as</p>
+                                    <p className="text-base font-bold">
+                                        {user.name}
+                                    </p>
+                                </DropdownItem>
+                                <DropdownItem href="/dashboard">
+                                    Dashboard
+                                </DropdownItem>
+                                <DropdownItem
+                                    className="text-danger"
+                                    color="danger"
+                                    onClick={() => logout.mutate()}
+                                >
+                                    Log out
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    ) : (
+                        <Button
+                            as={Link}
+                            color="secondary"
+                            href={`${API_URL}/auth/login`}
+                            variant="solid"
+                        >
+                            Login
+                        </Button>
+                    )}
                 </NavbarItem>
             </NavbarContent>
 
@@ -83,24 +155,55 @@ export const Navbar = () => {
 
             <NavbarMenu>
                 <div className="mx-4 mt-2 flex flex-col gap-2">
-                    {siteConfig.navItems.map((item, index) => (
-                        <NavbarMenuItem key={`${item}-${index}`}>
-                            <Link
-                                color={
-                                    index === 1
-                                        ? "primary"
-                                        : index ===
-                                            siteConfig.navItems.length - 1
-                                          ? "danger"
-                                          : "foreground"
-                                }
-                                href="#"
-                                size="lg"
-                            >
+                    {siteConfig.navItems.map((item) => (
+                        <NavbarItem key={item.href}>
+                            <Link color="foreground" href={item.href} size="lg">
                                 {item.label}
                             </Link>
-                        </NavbarMenuItem>
+                        </NavbarItem>
                     ))}
+                    {isLoading ? (
+                        <NavbarMenuItem>
+                            <LoaderIcon
+                                className="animate-spin"
+                                height={24}
+                                width={24}
+                            />
+                        </NavbarMenuItem>
+                    ) : user ? (
+                        <>
+                            <NavbarMenuItem>
+                                <Link
+                                    color="foreground"
+                                    href="/dashboard"
+                                    size="lg"
+                                >
+                                    Dashboard
+                                </Link>
+                            </NavbarMenuItem>
+                            <NavbarMenuItem>
+                                <Link
+                                    color="danger"
+                                    href={`${API_URL}/auth/logout`}
+                                    size="lg"
+                                    onClick={() => logout.mutate()}
+                                >
+                                    Log out
+                                </Link>
+                            </NavbarMenuItem>
+                            <div className="flex items-center gap-2">
+                                <Image
+                                    alt={user.name + " avatar"}
+                                    as={NextImage}
+                                    className="rounded-full hover:cursor-pointer"
+                                    height={30}
+                                    src={user.avatar}
+                                    width={30}
+                                />
+                                <p>{user.name}</p>
+                            </div>
+                        </>
+                    ) : null}
                 </div>
             </NavbarMenu>
         </NextUINavbar>

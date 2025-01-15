@@ -5,7 +5,7 @@ import { pool } from "..";
 export interface Guild {
     id: string;
     name: string;
-    icon: string;
+    icon?: string;
     members: number;
     cooldown: number;
     updates_enabled: 0 | 1;
